@@ -8,6 +8,8 @@
 
 **IF YOU KNOW C#, WPF, AND XAML: IT WOULD BE GREAT IF YOU COULD HELP OUT — OR FORK THIS AND RUN WITH IT YOURSELF.** The goal is not to leave this as eye candy: this tool should be **actually useful** and **usable for real** in the shack.
 
+**Work in progress — honest expectations:** this repo is **unfinished** and **actively stalled on my side**. I am **not a professional developer** and I have hit a **technical roadblock** I cannot reliably push through alone. **I do not promise** that I will keep improving or maintaining it; the next steps really need **manual, skilled work** on the codebase, not more “vibe coding” passes.
+
 **Where things stand:** the UI already “lands”, but from here on it needs **hands-on work** in the code. **XAML** is where AI assistance falls short (fine layouts, styles, alignment, keeping the front panel maintainable), so it helps to know the stack — or at least have patience for manual polish.
 
 **CAT / OmniRig:** **a lot of functionality is still missing** or **not trustworthy / not finished**. Do not assume everything you see on screen is correctly wired to the rig.
