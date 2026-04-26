@@ -1,0 +1,174 @@
+{
+  "namespaces": [
+    "Left",
+    "DSP",
+    "VFORight",
+    "Keypad",
+    "DualKnobs"
+  ],
+  "actions": {
+    "Left.PF": {
+      "oneShotCommand": "VR1;"
+    },
+    "Left.Power": {
+      "oneShotCommand": "PS0;",
+      "requireConfirmation": true,
+      "confirmationMessage": "Power off the transceiver?"
+    },
+    "Left.ATT": {
+      "onCommand": "RA01;",
+      "offCommand": "RA00;"
+    },
+    "Left.PreAmp": {
+      "onCommand": "PA1;",
+      "offCommand": "PA0;"
+    },
+    "Left.VOX": {
+      "onCommand": "VX1;",
+      "offCommand": "VX0;"
+    },
+    "Left.PROC": {
+      "onCommand": "PR1;",
+      "offCommand": "PR0;"
+    },
+    "Left.SEND": {
+      "onCommand": "TX;",
+      "offCommand": "RX;"
+    },
+    "Left.ATTune": {
+      "onCommand": "AC011;",
+      "offCommand": "AC000;"
+    },
+    "DSP.NR": {
+      "oneShotCommand": "NR1;"
+    },
+    "DSP.BC": {
+      "onCommand": "BC1;",
+      "offCommand": "BC0;"
+    },
+    "DSP.CWTune": {
+      "oneShotCommand": "CA1;"
+    },
+    "DSP.Filter": {
+      "oneShotCommand": "FW2400;"
+    },
+    "VFORight.TFSet": {
+      "oneShotCommand": "FR1;"
+    },
+    "VFORight.Split": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "VFORight.AB": {
+      "onCommand": "FR0;",
+      "offCommand": "FR1;"
+    },
+    "VFORight.Rit": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "VFORight.Xit": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "VFORight.MV": {
+      "onCommand": "MC1;",
+      "offCommand": "MC0;"
+    },
+    "VFORight.AeqB": {
+      "oneShotCommand": "AB;"
+    },
+    "VFORight.CLS": {
+      "oneShotCommand": "RC;"
+    },
+    "VFORight.Scan": {
+      "onCommand": "SC1;",
+      "offCommand": "SC0;"
+    },
+    "VFORight.MVfo": {
+      "oneShotCommand": "MC00;"
+    },
+    "VFORight.MIn": {
+      "oneShotCommand": ""
+    },
+    "QuickMemo.MR": {
+      "oneShotCommand": ""
+    },
+    "QuickMemo.MIn": {
+      "oneShotCommand": "LM1;"
+    },
+    "Mode.LsbUsb": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "Mode.CwFsk": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "Mode.FmAm": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "Mode.Menu": {
+      "oneShotCommand": ""
+    },
+    "Mode.1MHz": {
+      "onCommand": "",
+      "offCommand": ""
+    },
+    "DualKnobs.AfRf": {
+      "stepUpCommand": "",
+      "stepDownCommand": "",
+      "setValueCommand": ""
+    },
+    "DualKnobs.IfShiftSql": {
+      "stepUpCommand": "",
+      "stepDownCommand": "",
+      "setValueCommand": ""
+    },
+    "DualKnobs.DspSlope": {
+      "stepUpCommand": "",
+      "stepDownCommand": "",
+      "setValueCommand": ""
+    },
+    "Knob.Af": {
+      "setValueCommand": "AG{value255};"
+    },
+    "Knob.Rf": {
+      "setValueCommand": "RG{value255};"
+    },
+    "Knob.Sql": {
+      "setValueCommand": "SQ{value255};"
+    },
+    "Knob.IfShift": {
+      "setValueCommand": "IS{signed4};"
+    },
+    "Knob.DspHigh": {
+      "setValueCommand": "SH{value2};"
+    },
+    "Knob.DspLow": {
+      "setValueCommand": "SL{value2};"
+    },
+    "Knob.Phones": {
+      "setValueCommand": ""
+    },
+    "Knob.MicGain": {
+      "setValueCommand": "MG{value255};"
+    },
+    "Knob.MultiCh": {
+      "setValueCommand": ""
+    },
+    "TxParam.Mic": {
+      "setValueCommand": "MG{value255};"
+    },
+    "TxParam.Pwr": {
+      "setValueCommand": "PC{value3};"
+    },
+    "TxParam.Key": {
+      "setValueCommand": ""
+    },
+    "TxParam.Delay": {
+      "setValueCommand": ""
+    }
+  }
+}
