@@ -11,6 +11,8 @@ A Windows desktop remote-control style UI for the **Kenwood TS-570D** HF transce
 - .NET (see `TS570_Remote/TS570_Remote.csproj` for target framework)
 - OmniRig and appropriate rig configuration
 
-## License / use
+## License
 
-Use at your own risk around real radios and RF equipment.
+This project is released under the [MIT License](LICENSE).
+
+**Safety:** Use at your own risk around real radios and RF equipment. The MIT License does not cover liability for how you operate hardware.
