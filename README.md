@@ -24,6 +24,10 @@ If this sounds like your thing: open an issue, send a PR, or fork and go.
 
 A Windows desktop remote-control style UI for the **Kenwood TS-570D** HF transceiver, built with **WPF** and **OmniRig** for CAT. Treat it as a toy, not a guaranteed rig-control solution.
 
+### Inspiration
+
+The idea comes from **Hans, DK9BP** — a fellow amateur who offered **TS-570 control software** from his website. He is now, sadly, **silent key**. His site is **no longer online**, so the original download is gone; what remains is mainly material on his **YouTube channel**. For a taste of what that era looked like, here is **one example video** from his channel: [youtube.com/watch?v=DLC3zaSg2NM](https://www.youtube.com/watch?v=DLC3zaSg2NM).
+
 ![Remote UI mimicking the TS-570D front panel](docs/screenshot.png)
 
 ## Requirements
