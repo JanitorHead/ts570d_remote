@@ -37,6 +37,31 @@ If you want to see **how that program behaved in practice**, watch this recordin
 - .NET (see `TS570_Remote/TS570_Remote.csproj` for target framework)
 - OmniRig and appropriate rig configuration
 
+## Roadmap (checklist)
+
+High-impact gaps a human contributor would need to tackle — especially anything that needs pixel-accurate layout or non-trivial graphics.
+
+- [ ] **Front-panel fidelity:** Tighten button and control placement so the layout tracks the **real TS-570** more closely. Plain **XAML** is already a bottleneck: fine-grained alignment and “hardware” feel need **manual** iteration; generic AI edits stop being useful here.
+- [ ] **LCD badges:** Drive **all** status badges on the faux display so they track the **live** radio state the way the physical LCD does (full dynamic parity, not just a subset).
+- [ ] **Meter bargraphs (S, power, SWR, ALC):** Make the arcs **functionally correct** and visually convincing. **Curved labels** that follow the original meter artwork are painful in stock XAML; expect to **simplify** the graphics or move meter rendering to a **custom layer** (e.g. `Canvas`/`DrawingContext`, or another 2D stack) if you want dial-faithful typography.
+- [ ] **CAT coverage:** Implement and verify **Kenwood TS-570 CAT** commands end-to-end (map UI actions ↔ rig, error handling, edge cases) — not just the paths that happen to work today.
+- [ ] **PHONES / MIC knobs:** Hook up **headphone level** and **mic gain** (or whatever the rig exposes via CAT/OmniRig for those controls) so the knobs do real work.
+
+## What works today (snapshot)
+
+Roughly what is **known to do something useful** in the current build; everything else should be treated as **incomplete or cosmetic** until proven otherwise.
+
+- [x] **VFO frequency** readback from the rig.
+- [x] **Main VFO knob** and **MULTI/CH** knob: frequency changes.
+- [x] **Band UP / DOWN** buttons.
+- [x] **Mode** selection (LSB/USB/CW/FM/AM paths as wired).
+- [x] **S-meter:** partially working (do not trust it for critical readings yet).
+- [x] **Power off** from the remote UI.
+- [x] **Antenna** selection.
+- [x] **VFO A/B** toggle behaviour as implemented.
+
+**Still weak or missing:** For **most other front-panel buttons**, either **nothing is wired**, or the **LCD-style feedback** does not yet mirror what the real radio would show when you press them. Treat the panel as a **work in progress**, not a complete control surface.
+
 ## License
 
 This project is released under the [MIT License](LICENSE).
