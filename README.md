@@ -4,17 +4,17 @@
 
 ---
 
-## Estado del proyecto / cómo ayudar
+## Project status / how to help
 
-**SI SABES DE C#, WPF Y XAML: SERÍA GENIAL QUE ME ECHARAS UNA MANO — O QUE HICIERAS UN FORK Y LO LLEVES TÚ MISMO.** La idea no es dejarlo en un juguete visual: quiero que esta herramienta **sea útil** y que **se pueda usar de verdad** en el shack.
+**IF YOU KNOW C#, WPF, AND XAML: IT WOULD BE GREAT IF YOU COULD HELP OUT — OR FORK THIS AND RUN WITH IT YOURSELF.** The goal is not to leave this as eye candy: this tool should be **actually useful** and **usable for real** in the shack.
 
-**Dónde estamos ahora:** el UI ya “engancha”, pero a partir de aquí toca **meterle mano manual** al código. Con **XAML** la IA ayuda poco (layouts finos, estilos, alineaciones, mantenimiento del panel), así que hace falta alguien que sepa lo suyo o que al menos tenga paciencia para retocar a mano.
+**Where things stand:** the UI already “lands”, but from here on it needs **hands-on work** in the code. **XAML** is where AI assistance falls short (fine layouts, styles, alignment, keeping the front panel maintainable), so it helps to know the stack — or at least have patience for manual polish.
 
-**CAT / OmniRig:** **mucha funcionalidad aún no está incorporada** o **no es fiable / no está terminada**. No asumas que todo lo que ves en pantalla está bien cableado al rig.
+**CAT / OmniRig:** **a lot of functionality is still missing** or **not trustworthy / not finished**. Do not assume everything you see on screen is correctly wired to the rig.
 
-**Red / remoto real:** **de momento no hay ningún servidor** para colgar la emisora en red y mandarla desde otro PC o desde fuera de casa. Hoy es **control local** (Windows + OmniRig según tu config), no un producto de telecontrol por LAN/Internet.
+**Network / true remote:** **there is no server yet** to put the radio on the network and drive it from another PC or from outside the house. Today this is **local control** (Windows + OmniRig per your setup), not a LAN/Internet remote-control product.
 
-Si te interesa: abre un issue, un PR, o un fork y adelante.
+If this sounds like your thing: open an issue, send a PR, or fork and go.
 
 ---
 
