@@ -28,13 +28,7 @@ A Windows desktop remote-control style UI for the **Kenwood TS-570D** HF transce
 
 The idea comes from **Hans, DK9BP** — a fellow amateur who offered **TS-570 control software** from his website. He is now, sadly, **silent key**. His site is **no longer online**, so the original download is gone; what remains is mainly material on his **YouTube channel**.
 
-If you want to see **how that program behaved in practice**, open the **YouTube** demo below. (GitHub READMEs cannot embed a live video player — only a preview — so you still watch the actual clip on YouTube.)
-
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=DLC3zaSg2NM" title="Play on YouTube">
-    <img src="docs/dk9bp-youtube-preview.svg" alt="Video preview — click to play Hans DK9BP TS-570 control demo on YouTube" width="560">
-  </a>
-</p>
+If you want to see **how that program behaved in practice**, watch this recording on YouTube: https://www.youtube.com/watch?v=DLC3zaSg2NM
 
 ![Remote UI mimicking the TS-570D front panel](docs/screenshot.png)
 
