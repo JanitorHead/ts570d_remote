@@ -10,7 +10,7 @@
 
 <ItemGroup>
   <Reference Include="Interop.OmniRig">
-    <HintPath>Librerias\Interop.OmniRig.dll</HintPath>
+    <HintPath>Libraries\Interop.OmniRig.dll</HintPath>
   </Reference>
 </ItemGroup>
 
