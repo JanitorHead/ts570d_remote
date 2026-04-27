@@ -1,0 +1,99 @@
+<!--
+  Backup del bloque LCD original extraído de MainWindow.xaml.
+  Fecha: 2026-04-27
+  Origen: Grid Column="1" (AMBER LCD DISPLAY)
+-->
+<Grid Grid.Column="1" Margin="2,0,2,0" HorizontalAlignment="Center" Width="780" Height="148">
+  <Border CornerRadius="6" Margin="0" BorderThickness="16,26,16,16">
+    <Border.BorderBrush>
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF222210" Offset="0"/>
+        <GradientStop Color="#FF080804" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.BorderBrush>
+    <Border.Background>#FF0B0B0E</Border.Background>
+    <Border.Effect>
+      <DropShadowEffect Color="#FFCC9900" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+    </Border.Effect>
+    <Border Margin="0" CornerRadius="6" ClipToBounds="True">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+          <GradientStop Color="#FFBC8A00" Offset="0"/>
+          <GradientStop Color="#FFFFBA00" Offset="0.10"/>
+          <GradientStop Color="#FFFFBA00" Offset="0.90"/>
+          <GradientStop Color="#FFBC8A00" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+      <Grid Margin="10,2,10,2">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="18"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <WrapPanel Grid.Row="0" Orientation="Horizontal"
+                   VerticalAlignment="Top" HorizontalAlignment="Left" Margin="250,6,0,0" MaxWidth="600">
+          <Border x:Name="badgeTx" Style="{StaticResource LcdBadge}" Background="#40FF0000">
+            <TextBlock Text="TX" Style="{StaticResource LcdBadgeText}" Foreground="#FFFF4444"/>
+          </Border>
+          <Border x:Name="badgeRx" Style="{StaticResource LcdBadge}" Visibility="Visible">
+            <TextBlock Text="RX" Style="{StaticResource LcdBadgeText}" Foreground="#FF48FF48"/>
+          </Border>
+          <Border x:Name="badgeAt" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="AT" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeAnt" Style="{StaticResource LcdBadge}" Visibility="Visible">
+            <TextBlock x:Name="txtAntBadge" Text="ANT 1" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeAtt" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="ATT" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgePreAmp" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="PRE-AMP" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeVox" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="VOX" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeProc" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="PROC" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeNB" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="NB" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeSplit" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="SPLIT" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeRit" Style="{StaticResource LcdBadge}">
+            <TextBlock x:Name="txtRitBadge" Text="RIT" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeXit" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="XIT" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeNR" Style="{StaticResource LcdBadge}">
+            <TextBlock x:Name="txtNRBadge" Text="N.R. 1" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeBC" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="B.CANCEL" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeFast" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="FAST" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeFine" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="FINE" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeFLock" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="F.LOCK" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badge1MHz" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="1MHz" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeCtrl" Style="{StaticResource LcdBadge}">
+            <TextBlock Text="CTRL" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+          <Border x:Name="badgeTxPwr" Style="{StaticResource LcdBadge}">
+            <TextBlock x:Name="txtPwrBadge" Text="PWR" Style="{StaticResource LcdBadgeText}"/>
+          </Border>
+        </WrapPanel>
+      </Grid>
+    </Border>
+  </Border>
+</Grid>

@@ -419,17 +419,38 @@
         <!-- ══ LCD BADGE: status indicator ══════════════════════════════════ -->
         <!-- Dark amber LCD text appearance -->
         <Style x:Key="LcdBadge" TargetType="Border">
-            <Setter Property="Background"    Value="#30180800"/>
-            <Setter Property="CornerRadius"  Value="2"/>
-            <Setter Property="Padding"       Value="5,1.5"/>
-            <Setter Property="Margin"        Value="0,0,5,0"/>
-            <Setter Property="Visibility"    Value="Collapsed"/>
+            <Setter Property="Background"    Value="Transparent"/>
+            <Setter Property="CornerRadius"  Value="0"/>
+            <Setter Property="Padding"       Value="0"/>
+            <Setter Property="Margin"        Value="0"/>
+            <Setter Property="Opacity"       Value="0.0784"/>
+            <Setter Property="Visibility"    Value="Visible"/>
         </Style>
         <Style x:Key="LcdBadgeText" TargetType="TextBlock">
-            <Setter Property="FontFamily"   Value="Consolas"/>
-            <Setter Property="FontSize"     Value="9.5"/>
+            <Setter Property="FontFamily"   Value="Helvetica Now Text"/>
+            <Setter Property="FontSize"     Value="13.6"/>
             <Setter Property="FontWeight"   Value="Bold"/>
             <Setter Property="Foreground"   Value="#FF180800"/>
+        </Style>
+        <Style x:Key="LcdBadgeInverted" TargetType="Border" BasedOn="{StaticResource LcdBadge}">
+            <Setter Property="Background"   Value="#FF180800"/>
+            <Setter Property="CornerRadius" Value="1.8"/>
+            <Setter Property="Padding"      Value="5.2,0.4"/>
+            <Setter Property="MinWidth"     Value="22"/>
+        </Style>
+        <Style x:Key="LcdBadgeInvertedDigit" TargetType="Border" BasedOn="{StaticResource LcdBadgeInverted}">
+            <Setter Property="Padding"      Value="4.2,0.4"/>
+            <Setter Property="MinWidth"     Value="0"/>
+        </Style>
+        <Style x:Key="LcdBadgeTextInverted" TargetType="TextBlock" BasedOn="{StaticResource LcdBadgeText}">
+            <Setter Property="Foreground"   Value="#FFF4F4F4"/>
+            <Setter Property="FontSize"     Value="12.8"/>
+        </Style>
+        <Style x:Key="LcdBadgeTextTopSmall" TargetType="TextBlock" BasedOn="{StaticResource LcdBadgeText}">
+            <Setter Property="FontSize"     Value="10.8"/>
+        </Style>
+        <Style x:Key="LcdBadgeTextInvertedTopSmall" TargetType="TextBlock" BasedOn="{StaticResource LcdBadgeTextInverted}">
+            <Setter Property="FontSize"     Value="10.2"/>
         </Style>
 
         <!-- ══ LEDs ═════════════════════════════════════════════════════════ -->
@@ -618,189 +639,291 @@
                     <!-- ╔══════════════════════════════════════════════╗
                      ║  AMBER LCD DISPLAY                          ║
                      ╚══════════════════════════════════════════════╝ -->
-                    <Grid Grid.Column="1" Margin="2,0,2,0" HorizontalAlignment="Center" Width="780" Height="148">
-                    <Border CornerRadius="6" Margin="0" BorderThickness="16,26,16,16">
-                        <Border.BorderBrush>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FF222210" Offset="0"/>
-                                <GradientStop Color="#FF080804" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.BorderBrush>
-                        <Border.Background>#FF0B0B0E</Border.Background>
-                        <Border.Effect>
-                            <DropShadowEffect Color="#FFCC9900" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
-                        </Border.Effect>
-                        <Border Margin="0" CornerRadius="6" ClipToBounds="True">
-                            <Border.Background>
+                    <Grid Grid.Column="1" Margin="2,0,2,0" HorizontalAlignment="Center" Width="850" Height="148">
+                        <Border CornerRadius="6" Margin="0" BorderThickness="16,26,16,16">
+                            <Border.BorderBrush>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#FFBC8A00" Offset="0"/>
-                                    <GradientStop Color="#FFFFBA00" Offset="0.10"/>
-                                    <GradientStop Color="#FFFFBA00" Offset="0.90"/>
-                                    <GradientStop Color="#FFBC8A00" Offset="1"/>
+                                    <GradientStop Color="#FF222210" Offset="0"/>
+                                    <GradientStop Color="#FF080804" Offset="1"/>
                                 </LinearGradientBrush>
-                            </Border.Background>
-                        <Grid Margin="10,2,10,2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="18"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                            </Border.BorderBrush>
+                            <Border.Background>#FF0B0B0E</Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FFCC9900" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                            </Border.Effect>
+                            <Border Margin="0" CornerRadius="6" ClipToBounds="True">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#FFBC8A00" Offset="0"/>
+                                        <GradientStop Color="#FFFFBA00" Offset="0.10"/>
+                                        <GradientStop Color="#FFFFBA00" Offset="0.90"/>
+                                        <GradientStop Color="#FFBC8A00" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid Margin="8,3,8,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="220"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                            <!-- Status badges -->
-                            <WrapPanel Grid.Row="0" Orientation="Horizontal"
-                                   VerticalAlignment="Top" HorizontalAlignment="Left" Margin="250,6,0,0" MaxWidth="600">
-                                <!-- TX / RX -->
-                                <Border x:Name="badgeTx" Style="{StaticResource LcdBadge}" Background="#40FF0000">
-                                    <TextBlock Text="TX" Style="{StaticResource LcdBadgeText}" Foreground="#FFFF4444"/>
-                                </Border>
-                                <Border x:Name="badgeRx" Style="{StaticResource LcdBadge}" Visibility="Visible">
-                                    <TextBlock Text="RX" Style="{StaticResource LcdBadgeText}" Foreground="#FF48FF48"/>
-                                </Border>
-                                <!-- AT (tuner) -->
-                                <Border x:Name="badgeAt" Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="AT" Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <!-- Selected antenna -->
-                                <Border x:Name="badgeAnt" Style="{StaticResource LcdBadge}" Visibility="Visible">
-                                    <TextBlock x:Name="txtAntBadge" Text="ANT 1" Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <!-- Functions -->
-                                <Border x:Name="badgeAtt"    Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="ATT"      Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgePreAmp" Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="PRE-AMP"  Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeVox"    Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="VOX"      Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeProc"   Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="PROC"     Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeNB"     Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="NB"       Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeSplit"  Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="SPLIT"    Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeRit"    Style="{StaticResource LcdBadge}">
-                                    <TextBlock x:Name="txtRitBadge" Text="RIT" Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeXit"    Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="XIT"      Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeNR"     Style="{StaticResource LcdBadge}">
-                                    <TextBlock x:Name="txtNRBadge" Text="N.R. 1" Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeBC"     Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="B.CANCEL" Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeFast"   Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="FAST"     Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeFine"   Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="FINE"     Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeFLock"  Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="F.LOCK"   Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badge1MHz"   Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="1MHz"     Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeCtrl"   Style="{StaticResource LcdBadge}">
-                                    <TextBlock Text="CTRL"     Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                                <Border x:Name="badgeTxPwr"  Style="{StaticResource LcdBadge}">
-                                    <TextBlock x:Name="txtPwrBadge" Text="PWR" Style="{StaticResource LcdBadgeText}"/>
-                                </Border>
-                            </WrapPanel>
+                                    <!-- Meter block (left, fixed area) -->
+                                    <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Top" Margin="2,1,0,0" HorizontalAlignment="Left">
+                                        <Grid Width="200" Height="15" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="smeterLegendCanvas" Width="200" Height="15"/>
+                                            <TextBlock Text="S" FontFamily="Consolas" FontSize="6.8" Foreground="#D0180800"
+                                                       Margin="0,0,0,0" HorizontalAlignment="Left"/>
+                                        </Grid>
+                                        <Grid Width="200" Height="24" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="sharedMeterCanvas" Width="200" Height="24"/>
+                                        </Grid>
+                                        <Grid Width="200" Height="10" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="pwrLegendCanvas" Width="200" Height="10"/>
+                                            <TextBlock Text="PWR" FontFamily="Consolas" FontSize="6.8" Foreground="#B8180800"
+                                                       Margin="-14,0,0,0" HorizontalAlignment="Left"/>
+                                        </Grid>
+                                        <Grid Width="200" Height="10" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="swrLegendCanvas" Width="200" Height="10"/>
+                                            <TextBlock Text="SWR" FontFamily="Consolas" FontSize="6.8" Foreground="#C0180800"
+                                                       Margin="-14,0,0,0" HorizontalAlignment="Left"/>
+                                        </Grid>
+                                        <Grid Width="200" Height="24" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="swrMeterCanvas" Width="200" Height="24"/>
+                                        </Grid>
+                                        <TextBlock Text="ALC   0       5      10"
+                                                   FontFamily="Consolas" FontSize="6.8" Foreground="#C0180800" Width="200" TextAlignment="Left" Margin="7,0,0,0"/>
+                                        <Grid Width="200" Height="24" Margin="0,0,0,1" HorizontalAlignment="Left">
+                                            <Canvas x:Name="alcMeterCanvas" Width="200" Height="24"/>
+                                        </Grid>
+                                        <TextBlock x:Name="txtSmeter" Text="S 0"
+                                                   FontFamily="Consolas" FontSize="7.2" FontWeight="Bold"
+                                                   Foreground="#FF180800" Margin="7,0,0,0" Width="200" TextAlignment="Left"/>
+                                    </StackPanel>
 
-                            <Grid Grid.Row="1" Margin="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="200"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                    <!-- Badges + VFO block (right, fixed coordinates) -->
+                                    <Grid Grid.Column="1" Margin="5,0,0,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="24"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
 
-                                <!-- Left column meters -->
-                                <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Top" Margin="12,-2,0,0" HorizontalAlignment="Left">
-                                    <Grid Width="185" Height="15" Margin="0,-2,0,0" HorizontalAlignment="Left">
-                                        <Canvas x:Name="smeterLegendCanvas" Width="185" Height="15"/>
-                                        <TextBlock Text="S" FontFamily="Consolas" FontSize="6.8" Foreground="#D0180800"
-                                                   Margin="0,0,0,0" HorizontalAlignment="Left"/>
-                                    </Grid>
-                                    <Grid Width="185" Height="24" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                        <Canvas x:Name="sharedMeterCanvas" Width="185" Height="24"/>
-                                    </Grid>
-                                    <Grid Width="185" Height="9" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                        <Canvas x:Name="pwrLegendCanvas" Width="185" Height="10"/>
-                                        <TextBlock Text="PWR" FontFamily="Consolas" FontSize="6.8" Foreground="#B8180800"
-                                                   Margin="-17,0,0,0" HorizontalAlignment="Left"/>
-                                    </Grid>
+                                        <Canvas Grid.Row="0" Height="24" HorizontalAlignment="Left" Width="590" Margin="0,5,0,0" RenderTransformOrigin="0,0.5">
+                                            <Canvas.RenderTransform>
+                                                <ScaleTransform ScaleX="0.92" ScaleY="1"/>
+                                            </Canvas.RenderTransform>
+                                            <Border x:Name="badgeTx" Style="{StaticResource LcdBadgeInverted}" Margin="0" Canvas.Left="-58" Canvas.Top="0">
+                                                <TextBlock Text="TX" Style="{StaticResource LcdBadgeTextInverted}"/>
+                                            </Border>
+                                            <Border x:Name="badgeRx" Style="{StaticResource LcdBadgeInverted}" Margin="0" Canvas.Left="-28" Canvas.Top="0">
+                                                <TextBlock Text="RX" Style="{StaticResource LcdBadgeTextInverted}"/>
+                                            </Border>
+                                            <Border x:Name="badgeAt" Style="{StaticResource LcdBadgeInverted}" Margin="0" Canvas.Left="6" Canvas.Top="4">
+                                                <TextBlock Text="AT" Style="{StaticResource LcdBadgeTextInvertedTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeAnt" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="34" Canvas.Top="4">
+                                                <TextBlock x:Name="txtAntBadge" Text="ANT" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeAnt1" Style="{StaticResource LcdBadgeInvertedDigit}" Margin="0" Canvas.Left="60" Canvas.Top="4">
+                                                <TextBlock Text="1" Style="{StaticResource LcdBadgeTextInvertedTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeAnt2" Style="{StaticResource LcdBadgeInvertedDigit}" Margin="0" Canvas.Left="76" Canvas.Top="4">
+                                                <TextBlock Text="2" Style="{StaticResource LcdBadgeTextInvertedTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeAtt" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="104" Canvas.Top="4">
+                                                <TextBlock Text="ATT" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgePreAmp" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="142" Canvas.Top="4">
+                                                <TextBlock Text="PRE-AMP" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeVox" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="220" Canvas.Top="4">
+                                                <TextBlock Text="VOX" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeProc" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="244" Canvas.Top="4">
+                                                <TextBlock Text="PROC" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeNB" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="292" Canvas.Top="4">
+                                                <TextBlock Text="NB" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeFast" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="328" Canvas.Top="4">
+                                                <TextBlock Text="FAST" Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeTxPwr" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="382" Canvas.Top="4">
+                                                <TextBlock x:Name="txtPwrBadge" Text="TX EQ." Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeNR" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="453" Canvas.Top="4">
+                                                <TextBlock x:Name="txtNRBadge" Text="N.R." Style="{StaticResource LcdBadgeTextTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeNR1" Style="{StaticResource LcdBadgeInvertedDigit}" Margin="0" Canvas.Left="479" Canvas.Top="4">
+                                                <TextBlock Text="1" Style="{StaticResource LcdBadgeTextInvertedTopSmall}"/>
+                                            </Border>
+                                            <Border x:Name="badgeNR2" Style="{StaticResource LcdBadgeInvertedDigit}" Margin="0" Canvas.Left="495" Canvas.Top="4">
+                                                <TextBlock Text="2" Style="{StaticResource LcdBadgeTextInvertedTopSmall}"/>
+                                            </Border>
+                                        </Canvas>
 
-                                    <Grid Width="185" Height="9" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                        <Canvas x:Name="swrLegendCanvas" Width="185" Height="10"/>
-                                        <TextBlock Text="SWR" FontFamily="Consolas" FontSize="6.8" Foreground="#C0180800"
-                                                   Margin="-17,0,0,0" HorizontalAlignment="Left"/>
-                                    </Grid>
-                                    <Grid Width="185" Height="24" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                        <Canvas x:Name="swrMeterCanvas" Width="185" Height="24"/>
-                                    </Grid>
-
-                                    <TextBlock Text="ALC   0       5      10"
-                                           FontFamily="Consolas" FontSize="6.8" Foreground="#C0180800" Width="185" TextAlignment="Left" Margin="7,0,0,0"/>
-                                    <Grid Width="185" Height="24" Margin="0,0,0,1" HorizontalAlignment="Left">
-                                        <Canvas x:Name="alcMeterCanvas" Width="185" Height="24"/>
-                                    </Grid>
-
-                                    <TextBlock x:Name="txtSmeter" Text="S 0"
-                                           FontFamily="Consolas" FontSize="7.2" FontWeight="Bold"
-                                           Foreground="#FF180800" Margin="7,0,0,0" Width="185" TextAlignment="Left"/>
-                                </StackPanel>
-
-                                <!-- Centered VFO/frequency block -->
-                                <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Width="500" Margin="-240,-6,0,0">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0">
-                                        <Grid Width="410" Height="64" VerticalAlignment="Center">
-                                            <Canvas Width="410" Height="64">
-                                                <TextBlock Canvas.Left="52" Canvas.Top="2"
-                                                       Text="88.888.88"
+                                        <Canvas Grid.Row="1" Height="82" HorizontalAlignment="Left" Width="590" Margin="0,0,0,0" RenderTransformOrigin="0,0.5">
+                                            <Canvas.RenderTransform>
+                                                <ScaleTransform ScaleX="0.92" ScaleY="1"/>
+                                            </Canvas.RenderTransform>
+                                            <Border x:Name="badgeMenu" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="-58" Canvas.Top="-1">
+                                                <TextBlock Text="MENU" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeMch" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="-58" Canvas.Top="13">
+                                                <TextBlock Text="M.CH" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <TextBlock Canvas.Left="-60" Canvas.Top="28"
+                                                       Text="8. 8."
                                                        FontFamily="pack://application:,,,/Resources/Fonts/DSEG7Classic-BoldItalic.ttf#DSEG7 Classic"
-                                                       FontSize="48" FontWeight="Bold" FontStyle="Italic"
+                                                       FontSize="22" FontWeight="Normal" FontStyle="Italic"
                                                        Foreground="#14180800"
-                                                       IsHitTestVisible="False"/>
-                                                <TextBlock x:Name="txtFrequency" Canvas.Left="92" Canvas.Top="2"
+                                                       IsHitTestVisible="False"
+                                                       RenderTransformOrigin="0,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <ScaleTransform ScaleX="1.05" ScaleY="1"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                            <TextBlock x:Name="txtMenuDigits" Canvas.Left="-60" Canvas.Top="28"
+                                                       Text="8. 8."
+                                                       FontFamily="pack://application:,,,/Resources/Fonts/DSEG7Classic-BoldItalic.ttf#DSEG7 Classic"
+                                                       FontSize="22" FontWeight="Normal" FontStyle="Italic"
+                                                       Foreground="#14180800"
+                                                       RenderTransformOrigin="0,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <ScaleTransform ScaleX="1.05" ScaleY="1"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                            <Border x:Name="badgeMScr" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="-58" Canvas.Top="55">
+                                                <TextBlock Text="M.SCR" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+
+                                            <Border x:Name="badgeSplit" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="272" Canvas.Top="0">
+                                                <TextBlock Text="SPLIT" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeRit" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="334" Canvas.Top="0">
+                                                <TextBlock x:Name="txtRitBadge" Text="RIT" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeXit" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="381" Canvas.Top="0">
+                                                <TextBlock Text="XIT" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeBC" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="422" Canvas.Top="0">
+                                                <TextBlock Text="BEAT CANCEL" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeVfoA" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="270" Canvas.Top="14">
+                                                <TextBlock Text="◄A►" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeVfoB" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="270" Canvas.Top="27">
+                                                <TextBlock Text="◄B►" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeVfoM" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="270" Canvas.Top="40">
+                                                <TextBlock Text="◄M►" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+
+                                            <TextBlock Canvas.Left="-9" Canvas.Top="4"
+                                                       Text="8.8.8.8.8.8.8."
+                                                       FontFamily="pack://application:,,,/Resources/Fonts/DSEG7Classic-BoldItalic.ttf#DSEG7 Classic"
+                                                       FontSize="46" FontWeight="Normal" FontStyle="Italic"
+                                                       Foreground="#14180800"
+                                                       IsHitTestVisible="False"
+                                                       RenderTransformOrigin="0,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <ScaleTransform ScaleX="1.04" ScaleY="1"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                            <TextBlock x:Name="txtFrequency" Canvas.Left="31" Canvas.Top="4"
                                                        Text="7.074.00"
                                                        FontFamily="pack://application:,,,/Resources/Fonts/DSEG7Classic-BoldItalic.ttf#DSEG7 Classic"
-                                                       FontSize="48" FontWeight="Bold" FontStyle="Italic"
+                                                       FontSize="46" FontWeight="Normal" FontStyle="Italic"
                                                        Foreground="#E4180800">
-                                                    <TextBlock.Effect>
-                                                        <DropShadowEffect Color="#66CC8800"
-                                                                      BlurRadius="8"
-                                                                      ShadowDepth="0"
-                                                                      Opacity="0.65"/>
-                                                    </TextBlock.Effect>
-                                                </TextBlock>
-                                                <TextBlock x:Name="txtMode" Canvas.Left="86" Canvas.Top="52"
-                                                       Text="USB"
-                                                       FontFamily="Consolas" FontSize="15" FontWeight="Bold"
-                                                       Foreground="#CC180800"/>
-                                                <TextBlock x:Name="txtVfoLabel" Canvas.Left="330" Canvas.Top="2"
+                                                <TextBlock.RenderTransform>
+                                                    <ScaleTransform ScaleX="1.04" ScaleY="1"/>
+                                                </TextBlock.RenderTransform>
+                                                <TextBlock.Effect>
+                                                    <DropShadowEffect Color="#66CC8800" BlurRadius="8" ShadowDepth="0" Opacity="0.65"/>
+                                                </TextBlock.Effect>
+                                            </TextBlock>
+                                            <TextBlock x:Name="txtVfoLabel" Canvas.Left="269" Canvas.Top="4"
                                                        Text=" &lt;A"
-                                                       FontFamily="Consolas" FontSize="15"
-                                                       Foreground="#80180800"/>
-                                            </Canvas>
-                                        </Grid>
-                                    </StackPanel>
+                                                       FontFamily="Consolas" FontSize="14"
+                                                       Foreground="#80180800"
+                                                       Visibility="Collapsed"/>
+                                            <TextBlock x:Name="txtMode" Canvas.Left="41" Canvas.Top="56"
+                                                       Text="USB"
+                                                       FontFamily="Consolas" FontSize="14" FontWeight="Bold"
+                                                       Foreground="#CC180800"
+                                                       Visibility="Collapsed"/>
+                                            <Border x:Name="badgeLsb" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="-4" Canvas.Top="55">
+                                                <TextBlock Text="LSB" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeUsb" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="32" Canvas.Top="55">
+                                                <TextBlock Text="USB" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeCw" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="70" Canvas.Top="55">
+                                                <TextBlock Text="CW" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeR" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="100" Canvas.Top="55">
+                                                <TextBlock Text="R" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeFsk" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="116" Canvas.Top="55">
+                                                <TextBlock Text="FSK" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeFm" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="150" Canvas.Top="55">
+                                                <TextBlock Text="FM" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeAm" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="180" Canvas.Top="55">
+                                                <TextBlock Text="AM" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+
+                                            <Border x:Name="badgeFLock" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="210" Canvas.Top="55">
+                                                <TextBlock Text="F.LOCK" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeFine" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="273" Canvas.Top="55">
+                                                <TextBlock Text="FINE" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badge1MHz" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="322" Canvas.Top="55">
+                                                <TextBlock Text="1MHz" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeT" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="382" Canvas.Top="55">
+                                                <TextBlock Text="T" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeCtcss" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="402" Canvas.Top="55">
+                                                <TextBlock Text="CTCSS" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+                                            <Border x:Name="badgeCtrl" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="478" Canvas.Top="55">
+                                                <TextBlock Text="CTRL" Style="{StaticResource LcdBadgeText}"/>
+                                            </Border>
+
+                                            <!-- Right 14-segment alphanumeric display -->
+                                            <TextBlock Canvas.Left="316" Canvas.Top="20"
+                                                       Text="~.~.~.~.~.~.~."
+                                                       FontFamily="pack://application:,,,/Resources/Fonts/DSEG14Classic-Italic.ttf#DSEG14 Classic"
+                                                       FontSize="32" FontStyle="Italic"
+                                                       Foreground="#14180800"
+                                                       IsHitTestVisible="False"
+                                                       RenderTransformOrigin="0,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <ScaleTransform ScaleX="1.05" ScaleY="1"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                            <TextBlock x:Name="txtRightAlpha" Canvas.Left="316" Canvas.Top="20"
+                                                       Text="~.~.~.~.~.~.~."
+                                                       FontFamily="pack://application:,,,/Resources/Fonts/DSEG14Classic-Italic.ttf#DSEG14 Classic"
+                                                       FontSize="32" FontStyle="Italic"
+                                                       Foreground="#14180800"
+                                                       RenderTransformOrigin="0,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <ScaleTransform ScaleX="1.05" ScaleY="1"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                        </Canvas>
+                                    </Grid>
                                 </Grid>
-                            </Grid>
-                        </Grid>
+                            </Border>
                         </Border>
-                    </Border>
                         <TextBlock Text="KENWOOD  HF TRANSCEIVER  TS-570D"
-                               FontFamily="Consolas" FontSize="12" FontWeight="Bold"
-                               Foreground="#FFD9C79A"
-                               HorizontalAlignment="Left" VerticalAlignment="Top"
-                               Margin="16,11,0,0"
-                               IsHitTestVisible="False"/>
+                                   FontFamily="Consolas" FontSize="12" FontWeight="Bold"
+                                   Foreground="#FFD9C79A"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top"
+                                   Margin="16,11,0,0"
+                                   IsHitTestVisible="False"/>
                     </Grid>
 
                     <!-- DSP section (right side of LCD): buttons + knob -->

@@ -1,0 +1,638 @@
+{
+  "radio": "Kenwood TS-570D/TS-570S",
+  "sourceRepository": "https://github.com/kf0uwv/ts570d",
+  "sourceFile": "radio/src/commands.rs",
+  "commandCount": 70,
+  "commands": [
+    {
+      "code": "FA",
+      "description": "VFO A Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FA;",
+      "writeSyntax": "FA<params>;",
+      "writeExample": "FA00014250000;"
+    },
+    {
+      "code": "FB",
+      "description": "VFO B Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FB;",
+      "writeSyntax": "FB<params>;",
+      "writeExample": "FB00007100000;"
+    },
+    {
+      "code": "FC",
+      "description": "Sub-receiver VFO Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FC;",
+      "writeSyntax": "FC<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "MD",
+      "description": "Operating Mode",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "MD;",
+      "writeSyntax": "MD<params>;",
+      "writeExample": "MD2;"
+    },
+    {
+      "code": "FR",
+      "description": "Receiver VFO/Memory Selection",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FR;",
+      "writeSyntax": "FR<params>;",
+      "writeExample": "FR1;"
+    },
+    {
+      "code": "FT",
+      "description": "Transmitter VFO/Memory Selection",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FT;",
+      "writeSyntax": "FT<params>;",
+      "writeExample": "FT1;"
+    },
+    {
+      "code": "FN",
+      "description": "VFO A/B Selection",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FN;",
+      "writeSyntax": "FN<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "MC",
+      "description": "Memory Channel Number",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "MC;",
+      "writeSyntax": "MC<params>;",
+      "writeExample": "MC10;"
+    },
+    {
+      "code": "MR",
+      "description": "Memory Read",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "MR;",
+      "writeSyntax": "MR<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "MW",
+      "description": "Memory Write",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "MW<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "AG",
+      "description": "AF Gain",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "AG;",
+      "writeSyntax": "AG<params>;",
+      "writeExample": "AG200;"
+    },
+    {
+      "code": "RG",
+      "description": "RF Gain",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "RG;",
+      "writeSyntax": "RG<params>;",
+      "writeExample": "RG255;"
+    },
+    {
+      "code": "MG",
+      "description": "Microphone Gain",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "MG;",
+      "writeSyntax": "MG<params>;",
+      "writeExample": "MG075;"
+    },
+    {
+      "code": "PC",
+      "description": "Power Control (Transmit Power)",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "PC;",
+      "writeSyntax": "PC<params>;",
+      "writeExample": "PC100;"
+    },
+    {
+      "code": "SQ",
+      "description": "Squelch Level",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "SQ;",
+      "writeSyntax": "SQ<params>;",
+      "writeExample": "SQ050;"
+    },
+    {
+      "code": "VG",
+      "description": "VOX Gain",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "VG;",
+      "writeSyntax": "VG<params>;",
+      "writeExample": "VG007;"
+    },
+    {
+      "code": "FW",
+      "description": "Filter Width",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FW;",
+      "writeSyntax": "FW<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "SH",
+      "description": "Filter High Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "SH;",
+      "writeSyntax": "SH<params>;",
+      "writeExample": "SH10;"
+    },
+    {
+      "code": "SL",
+      "description": "Filter Low Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "SL;",
+      "writeSyntax": "SL<params>;",
+      "writeExample": "SL07;"
+    },
+    {
+      "code": "TX",
+      "description": "Transmit Mode (PTT On)",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "TX<params>;",
+      "writeExample": "TX;"
+    },
+    {
+      "code": "RX",
+      "description": "Receive Mode (PTT Off)",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "RX<params>;",
+      "writeExample": "RX;"
+    },
+    {
+      "code": "GT",
+      "description": "AGC Time Constant",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "GT;",
+      "writeSyntax": "GT<params>;",
+      "writeExample": "GT004;"
+    },
+    {
+      "code": "RA",
+      "description": "Attenuator",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "RA;",
+      "writeSyntax": "RA<params>;",
+      "writeExample": "RA01;"
+    },
+    {
+      "code": "PA",
+      "description": "Pre-amplifier",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "PA;",
+      "writeSyntax": "PA<params>;",
+      "writeExample": "PA1;"
+    },
+    {
+      "code": "NB",
+      "description": "Noise Blanker",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "NB;",
+      "writeSyntax": "NB<params>;",
+      "writeExample": "NB1;"
+    },
+    {
+      "code": "NR",
+      "description": "Noise Reduction",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "NR;",
+      "writeSyntax": "NR<params>;",
+      "writeExample": "NR1;"
+    },
+    {
+      "code": "NL",
+      "description": "Noise Reduction Level",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "NL;",
+      "writeSyntax": "NL<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "RT",
+      "description": "RIT On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "RT;",
+      "writeSyntax": "RT<params>;",
+      "writeExample": "RT1;"
+    },
+    {
+      "code": "XT",
+      "description": "XIT On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "XT;",
+      "writeSyntax": "XT<params>;",
+      "writeExample": "XT1;"
+    },
+    {
+      "code": "RC",
+      "description": "RIT/XIT Frequency Clear",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "RC<params>;",
+      "writeExample": "RC;"
+    },
+    {
+      "code": "RD",
+      "description": "RIT/XIT Frequency Down",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "RD<params>;",
+      "writeExample": "RD;"
+    },
+    {
+      "code": "RU",
+      "description": "RIT/XIT Frequency Up",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "RU<params>;",
+      "writeExample": "RU;"
+    },
+    {
+      "code": "SC",
+      "description": "Scan Mode",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "SC;",
+      "writeSyntax": "SC<params>;",
+      "writeExample": "SC1;"
+    },
+    {
+      "code": "ST",
+      "description": "Scan Type",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "ST;",
+      "writeSyntax": "ST<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "SP",
+      "description": "Split Operation",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "SP;",
+      "writeSyntax": "SP<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "OS",
+      "description": "Offset",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "OS;",
+      "writeSyntax": "OS<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "CT",
+      "description": "CTCSS On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "CT;",
+      "writeSyntax": "CT<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "CN",
+      "description": "CTCSS Tone Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "CN;",
+      "writeSyntax": "CN<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "TO",
+      "description": "Tone Frequency On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "TO;",
+      "writeSyntax": "TO<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "TN",
+      "description": "Tone Frequency",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "TN;",
+      "writeSyntax": "TN<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "IF",
+      "description": "Transceiver Information",
+      "supportsRead": true,
+      "supportsWrite": false,
+      "readCommand": "IF;",
+      "writeSyntax": null,
+      "writeExample": null
+    },
+    {
+      "code": "ID",
+      "description": "Transceiver ID (Returns 019 for TS-570D)",
+      "supportsRead": true,
+      "supportsWrite": false,
+      "readCommand": "ID;",
+      "writeSyntax": null,
+      "writeExample": null
+    },
+    {
+      "code": "AI",
+      "description": "Auto Information Mode",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "AI;",
+      "writeSyntax": "AI<params>;",
+      "writeExample": "AI2;"
+    },
+    {
+      "code": "PS",
+      "description": "Power Status",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "PS;",
+      "writeSyntax": "PS<params>;",
+      "writeExample": "PS0;"
+    },
+    {
+      "code": "SM",
+      "description": "S-Meter Reading",
+      "supportsRead": true,
+      "supportsWrite": false,
+      "readCommand": "SM;",
+      "writeSyntax": null,
+      "writeExample": null
+    },
+    {
+      "code": "RM",
+      "description": "Meter Function Selection",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "RM;",
+      "writeSyntax": "RM<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "LK",
+      "description": "Lock",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "LK;",
+      "writeSyntax": "LK<params>;",
+      "writeExample": "LK1;"
+    },
+    {
+      "code": "UP",
+      "description": "Frequency Up (VFO)",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "UP<params>;",
+      "writeExample": "UP;"
+    },
+    {
+      "code": "DN",
+      "description": "Frequency Down (VFO)",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "DN<params>;",
+      "writeExample": "DN;"
+    },
+    {
+      "code": "BY",
+      "description": "Busy Status",
+      "supportsRead": true,
+      "supportsWrite": false,
+      "readCommand": "BY;",
+      "writeSyntax": null,
+      "writeExample": null
+    },
+    {
+      "code": "VX",
+      "description": "VOX On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "VX;",
+      "writeSyntax": "VX<params>;",
+      "writeExample": "VX1;"
+    },
+    {
+      "code": "VD",
+      "description": "VOX Delay",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "VD;",
+      "writeSyntax": "VD<params>;",
+      "writeExample": "VD2000;"
+    },
+    {
+      "code": "KS",
+      "description": "Keying Speed",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "KS;",
+      "writeSyntax": "KS<params>;",
+      "writeExample": "KS030;"
+    },
+    {
+      "code": "KY",
+      "description": "CW Keying",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "KY<params>;",
+      "writeExample": "KYCQ;"
+    },
+    {
+      "code": "BK",
+      "description": "Break-in On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "BK;",
+      "writeSyntax": "BK<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "EX",
+      "description": "Extended Menu",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "EX;",
+      "writeSyntax": "EX<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "QR",
+      "description": "Quick Memory Store",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "QR<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "MF",
+      "description": "Memory Function",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "MF;",
+      "writeSyntax": "MF<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "AC",
+      "description": "Antenna Selection",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "AC;",
+      "writeSyntax": "AC<params>;",
+      "writeExample": null
+    },
+    {
+      "code": "IS",
+      "description": "IF Shift",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "IS;",
+      "writeSyntax": "IS<params>;",
+      "writeExample": "IS-0300;"
+    },
+    {
+      "code": "AN",
+      "description": "Antenna Selection (1=ANT1, 2=ANT2)",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "AN;",
+      "writeSyntax": "AN<params>;",
+      "writeExample": "AN2;"
+    },
+    {
+      "code": "BC",
+      "description": "Beat Cancel (0=off, 1=on, 2=enhanced)",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "BC;",
+      "writeSyntax": "BC<params>;",
+      "writeExample": "BC2;"
+    },
+    {
+      "code": "PT",
+      "description": "CW Pitch (00-12)",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "PT;",
+      "writeSyntax": "PT<params>;",
+      "writeExample": "PT08;"
+    },
+    {
+      "code": "SD",
+      "description": "Semi Break-in Delay (0-1000ms in 50ms steps)",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "SD;",
+      "writeSyntax": "SD<params>;",
+      "writeExample": "SD0500;"
+    },
+    {
+      "code": "CA",
+      "description": "CW Auto Zero-beat On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "CA;",
+      "writeSyntax": "CA<params>;",
+      "writeExample": "CA1;"
+    },
+    {
+      "code": "FS",
+      "description": "Fine Step On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "FS;",
+      "writeSyntax": "FS<params>;",
+      "writeExample": "FS1;"
+    },
+    {
+      "code": "VR",
+      "description": "Voice Recall (1 or 2)",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "VR<params>;",
+      "writeExample": "VR1;"
+    },
+    {
+      "code": "SR",
+      "description": "System Reset (1=partial, 2=full)",
+      "supportsRead": false,
+      "supportsWrite": true,
+      "readCommand": null,
+      "writeSyntax": "SR<params>;",
+      "writeExample": "SR1;"
+    },
+    {
+      "code": "PR",
+      "description": "Speech Processor On/Off",
+      "supportsRead": true,
+      "supportsWrite": true,
+      "readCommand": "PR;",
+      "writeSyntax": "PR<params>;",
+      "writeExample": "PR1;"
+    },
+    {
+      "code": "FV",
+      "description": "Firmware Version",
+      "supportsRead": true,
+      "supportsWrite": false,
+      "readCommand": "FV;",
+      "writeSyntax": null,
+      "writeExample": null
+    }
+  ]
+}
