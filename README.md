@@ -34,8 +34,45 @@ If you want to see **how that program behaved in practice**, watch this recordin
 
 ## Requirements
 
-- .NET (see `TS570_Remote/TS570_Remote.csproj` for target framework)
-- OmniRig and appropriate rig configuration
+- **OS:** 64-bit Windows (WPF; `net10.0-windows`).
+- **.NET 10 SDK** — the project targets .NET 10; install the matching SDK from [https://dotnet.microsoft.com/download](https://dotnet.microsoft.com/download) (see `TargetFramework` in `TS570_Remote/TS570_Remote.csproj`).
+- **OmniRig** installed and configured for your rig at **runtime**; the **build** also depends on a local interop assembly (see [Build](#build)).
+
+## Build
+
+**Interop assembly:** The project references `TS570_Remote/Librerias/Interop.OmniRig.dll` (see `TS570_Remote.csproj`). That file must be present or the build will fail. If you do not have it in your tree, create it from the OmniRig type library (for example with `tlbimp` on `OmniRig.tlb` from the OmniRig install) and place the DLL in `TS570_Remote/Librerias/`, or adjust the reference in the project to match your layout.
+
+From the **repository root** (where this `README.md` and `TS570_Remote.slnx` are):
+
+**Restore and compile** (Debug):
+
+```powershell
+dotnet build TS570_Remote.slnx
+```
+
+The solution under `TS570_Remote/TS570_Remote.sln` is equivalent; the VS Code tasks in `.vscode/tasks.json` use that path.
+
+**Run** the app (after a successful build):
+
+```powershell
+dotnet run --project TS570_Remote/TS570_Remote.csproj
+```
+
+**Release** output:
+
+```powershell
+dotnet build TS570_Remote.slnx -c Release
+```
+
+**Publish** (for example a folder of binaries you can copy elsewhere):
+
+```powershell
+dotnet publish TS570_Remote.slnx -c Release
+```
+
+Default build output is under `TS570_Remote/bin/<Configuration>/net10.0-windows/`. In VS Code you can also use the **build**, **publish**, and **watch** tasks from `.vscode/tasks.json` (F1 → *Tasks: Run Task*).
+
+**Debugging:** `.vscode/launch.json` is set up to launch `TS570_Remote/bin/Debug/net10.0-windows/TS570_Remote.dll` with the *build* task as a pre-launch step.
 
 ## Roadmap (checklist)
 
