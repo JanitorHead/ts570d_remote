@@ -40,7 +40,7 @@ If you want to see **how that program behaved in practice**, watch this recordin
 
 ## Build
 
-**Interop assembly:** The project references `TS570_Remote/Libraries/Interop.OmniRig.dll` (see `TS570_Remote.csproj`). That file must be present or the build will fail. If you do not have it in your tree, create it from the OmniRig type library (for example with `tlbimp` on `OmniRig.tlb` from the OmniRig install) and place the DLL in `TS570_Remote/Libraries/`, or adjust the reference in the project to match your layout.
+**Interop assembly:** The project references `TS570_Remote/libraries/Interop.OmniRig.dll` (see `TS570_Remote.csproj`). That file must be present or the build will fail. If you do not have it in your tree, create it from the OmniRig type library (for example with `tlbimp` on `OmniRig.tlb` from the OmniRig install) and place the DLL in `TS570_Remote/libraries/`, or adjust the reference in the project to match your layout.
 
 From the **repository root** (where this `README.md` and `TS570_Remote.slnx` are):
 
