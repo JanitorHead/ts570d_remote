@@ -21,6 +21,7 @@
 
 <ItemGroup>
   <Resource Include="Resources\Fonts\DSEG7Classic-BoldItalic.ttf" />
+  <Resource Include="Resources\Fonts\DSEG14Classic-Italic.ttf" />
 </ItemGroup>
 
 <ItemGroup>

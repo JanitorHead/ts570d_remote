@@ -1071,11 +1071,19 @@ namespace TS570_Remote
         // ══════════════════════════════════════════════════════════════════════
         private void UpdateLcdBadges()
         {
+            OmniRig.RigParamX modeNow = OmniRig.RigParamX.PM_UNKNOWN;
+            if (rigControl?.Rig1 != null)
+            {
+                try { modeNow = rigControl.Rig1.Mode; } catch { }
+            }
+
             Show(badgeTx,      _isTx);
             Show(badgeRx,      !_isTx);
             Show(badgeAt,      _atOn);
             badgeAnt.Visibility = Visibility.Visible;     // always visible
-            txtAntBadge.Text = $"ANT {_antSel}";
+            txtAntBadge.Text = "ANT";
+            Show(badgeAnt1,    false);
+            Show(badgeAnt2,    false);
 
             Show(badgeAtt,     _attOn);
             Show(badgePreAmp,  _preAmpOn);
@@ -1086,19 +1094,33 @@ namespace TS570_Remote
             Show(badgeRit,     _ritOn);
             Show(badgeXit,     _xitOn);
             Show(badgeFast,    _agcFast);
+            Show(badgeMenu,    false);
+            Show(badgeMch,     _memMode);
+            Show(badgeMScr,    false);
+            Show(badgeVfoA,    !_memMode && _vfoSel == 0);
+            Show(badgeVfoB,    !_memMode && _vfoSel == 1);
+            Show(badgeVfoM,    _memMode);
             Show(badgeFine,    _fineOn);
             Show(badgeFLock,   _fLockOn);
             Show(badge1MHz,    _step1MHz);
             Show(badgeBC,      _bcOn);
             Show(badgeTxPwr,   true);
-            txtPwrBadge.Text = _txPwrKnown ? $"PWR {_txPwrValue:000}W" : "PWR ---";
-            badgeTxPwr.Background = _activeTxParam == TxParam.Pwr
-                ? new SolidColorBrush(Color.FromArgb(0xAA, 0xFF, 0x92, 0x00))
-                : new SolidColorBrush(Color.FromArgb(0x55, 0x19, 0x19, 0x1A));
+            txtPwrBadge.Text = "TX EQ.";
+            Show(badgeLsb,     modeNow == OmniRig.RigParamX.PM_SSB_L);
+            Show(badgeUsb,     modeNow == OmniRig.RigParamX.PM_SSB_U);
+            Show(badgeCw,      modeNow == OmniRig.RigParamX.PM_CW_L || modeNow == OmniRig.RigParamX.PM_CW_U);
+            Show(badgeR,       false);
+            Show(badgeFsk,     modeNow == OmniRig.RigParamX.PM_DIG_L || modeNow == OmniRig.RigParamX.PM_DIG_U);
+            Show(badgeFm,      modeNow == OmniRig.RigParamX.PM_FM);
+            Show(badgeAm,      modeNow == OmniRig.RigParamX.PM_AM);
+            Show(badgeT,       false);
+            Show(badgeCtcss,   false);
 
             // NR shows textual value
             Show(badgeNR, _nrState > 0);
-            txtNRBadge.Text = _nrState == 1 ? "N.R. 1" : "N.R. 2";
+            txtNRBadge.Text = "N.R.";
+            Show(badgeNR1, false);
+            Show(badgeNR2, false);
 
             // VFO label
             txtVfoLabel.Text = _memMode
@@ -1107,7 +1129,12 @@ namespace TS570_Remote
         }
 
         private static void Show(Border b, bool visible)
-            => b.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        {
+            // LCD ghosting: indicators are always printed on the panel.
+            // "Off" means dimmed, not hidden.
+            b.Visibility = Visibility.Visible;
+            b.Opacity = visible ? 1.0 : (20.0 / 255.0);
+        }
 
         // ══════════════════════════════════════════════════════════════════════
         // STYLE HELPERS
@@ -1156,9 +1183,9 @@ namespace TS570_Remote
 
         private void UpdateFrequencyCanvasOffsets(int hz)
         {
-            // 1-digit MHz: keep one ghost digit visible on the left.
-            // 2-digit MHz: align active frequency with ghost start.
-            double left = hz >= 10_000_000 ? 52 : 92;
+            // Align right edge with ghost template for <10 MHz,
+            // and switch to full-left alignment when >=10 MHz.
+            double left = hz >= 10_000_000 ? -9 : 31;
             Canvas.SetLeft(txtFrequency, left);
             // Keep mode (USB/LSB/…) in a fixed position; the VFO only shifts the frequency digits.
         }
