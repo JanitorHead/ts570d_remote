@@ -427,7 +427,7 @@
             <Setter Property="Visibility"    Value="Visible"/>
         </Style>
         <Style x:Key="LcdBadgeText" TargetType="TextBlock">
-            <Setter Property="FontFamily"   Value="Helvetica Now Text"/>
+            <Setter Property="FontFamily"   Value="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica"/>
             <Setter Property="FontSize"     Value="13.6"/>
             <Setter Property="FontWeight"   Value="Bold"/>
             <Setter Property="Foreground"   Value="#FF180800"/>
@@ -513,7 +513,7 @@
         <!-- ════════════════════════════════════════════════════════════════════
          MAIN CHASSIS  1120 × 440
          ════════════════════════════════════════════════════════════════════ -->
-        <Border Width="1120" Height="440" CornerRadius="8" BorderThickness="2.5">
+        <Border Width="1040" Height="440" CornerRadius="8" BorderThickness="2.5" HorizontalAlignment="Left">
             <Border.BorderBrush>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#FF6E6E78" Offset="0"/>
@@ -560,7 +560,7 @@
                 <!-- ══ ROW 1 - LCD ═════════════════════════════════════════════ -->
                 <Grid Grid.Row="1" Margin="5,4,5,4">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="115"/>
+                        <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="128"/>
                     </Grid.ColumnDefinitions>
@@ -568,7 +568,10 @@
                     <!-- ══════════════════════════════════════════════════════════
                          Eight left function buttons - pill shape with top labels
                          ══════════════════════════════════════════════════════════ -->
-                    <UniformGrid Grid.Column="0" Rows="4" Columns="2" Margin="0">
+                    <UniformGrid Grid.Column="0" Rows="4" Columns="2" Margin="0" RenderTransformOrigin="0.5,0.5">
+                        <UniformGrid.LayoutTransform>
+                            <ScaleTransform ScaleX="0.92" ScaleY="0.92"/>
+                        </UniformGrid.LayoutTransform>
 
                         <StackPanel Margin="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="PF"
@@ -639,7 +642,7 @@
                     <!-- ╔══════════════════════════════════════════════╗
                      ║  AMBER LCD DISPLAY                          ║
                      ╚══════════════════════════════════════════════╝ -->
-                    <Grid Grid.Column="1" Margin="2,0,2,0" HorizontalAlignment="Center" Width="850" Height="148">
+                    <Grid Grid.Column="1" Margin="2,0,2,0" HorizontalAlignment="Left" Width="775" Height="148">
                         <Border CornerRadius="6" Margin="0" BorderThickness="16,26,16,16">
                             <Border.BorderBrush>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -660,47 +663,200 @@
                                         <GradientStop Color="#FFBC8A00" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Border.Background>
-                                <Grid Margin="8,3,8,3">
+                                <Grid Margin="0,3,0,3">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="220"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Meter block (left, fixed area) -->
-                                    <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Top" Margin="2,1,0,0" HorizontalAlignment="Left">
+                                    <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Top" Margin="4,1,0,0" HorizontalAlignment="Left">
                                         <Grid Width="200" Height="15" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                            <Canvas x:Name="smeterLegendCanvas" Width="200" Height="15"/>
-                                            <TextBlock Text="S" FontFamily="Consolas" FontSize="6.8" Foreground="#D0180800"
-                                                       Margin="0,0,0,0" HorizontalAlignment="Left"/>
+                                            <Canvas x:Name="smeterLegendCanvas" Width="200" Height="15">
+                                                <TextBlock Text="1"  Width="14" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="26"   Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="3"  Width="14" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="44"  Canvas.Top="9" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <TextBlock Text="5"  Width="14" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="60"  Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="7"  Width="14" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="77"  Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="9"  Width="14" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="94"  Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="20" Width="18" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="114"  Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="40" Width="18" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="137" Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="60" Width="18" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="157" Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="dB" Width="16" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="169" Canvas.Top="9" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="23"    Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="40"   Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="56"   Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="73"   Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="90"   Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="109"   Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="132"  Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="153" Canvas.Top="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            </Canvas>
+                                            <TextBlock Text="S" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784"
+                                                       Margin="15,9,0,-3" HorizontalAlignment="Left"/>
                                         </Grid>
-                                        <Grid Width="200" Height="24" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                            <Canvas x:Name="sharedMeterCanvas" Width="200" Height="24"/>
+                                        <Grid Width="200" Height="18" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="sharedMeterCanvas" Width="200" Height="18">
+                                                <!-- Markers under 1/3/5/7/9 (top aligned with large-bar top edge) -->
+                                                <Rectangle Width="3" Height="2" Fill="#14180800" Canvas.Left="32" Canvas.Top="2"/>
+                                                <Rectangle Width="3" Height="2" Fill="#14180800" Canvas.Left="49" Canvas.Top="2"/>
+                                                <Rectangle Width="4" Height="2" Fill="#14180800" Canvas.Left="65" Canvas.Top="2"/>
+                                                <Rectangle Width="3" Height="2" Fill="#14180800" Canvas.Left="82" Canvas.Top="2"/>
+                                                <Rectangle Width="3" Height="2" Fill="#14180800" Canvas.Left="99" Canvas.Top="2"/>
+
+                                                <!-- Designer ghost shape extracted from dynamic meter:
+                                                     left section narrow bars + right section larger bars -->
+                                                <!-- Small S-meter section: 18 segments -->
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="28" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="32" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="36" Canvas.Top="8"/>
+                                                <Rectangle Width="4" Height="10" Fill="#14180800" Canvas.Left="40" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="45" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="49" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="53" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="57" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="61" Canvas.Top="8"/>
+                                                <Rectangle Width="4" Height="10" Fill="#14180800" Canvas.Left="65" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="70" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="74" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="78" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="82" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="86" Canvas.Top="8"/>
+                                                <Rectangle Width="4" Height="10" Fill="#14180800" Canvas.Left="90" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="95" Canvas.Top="8"/>
+                                                <Rectangle Width="3" Height="10" Fill="#14180800" Canvas.Left="99" Canvas.Top="8"/>
+
+                                                <!-- Large S-meter section: 12 segments -->
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="103" Canvas.Top="2"/>
+                                                <Rectangle Width="4" Height="16" Fill="#14180800" Canvas.Left="109" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="114" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="120" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="126" Canvas.Top="2"/>
+                                                <Rectangle Width="4" Height="16" Fill="#14180800" Canvas.Left="132" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="137" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="143" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="149" Canvas.Top="2"/>
+                                                <Rectangle Width="4" Height="16" Fill="#14180800" Canvas.Left="155" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="160" Canvas.Top="2"/>
+                                                <Rectangle Width="5" Height="16" Fill="#14180800" Canvas.Left="166" Canvas.Top="2"/>
+                                            </Canvas>
                                         </Grid>
-                                        <Grid Width="200" Height="10" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                            <Canvas x:Name="pwrLegendCanvas" Width="200" Height="10"/>
-                                            <TextBlock Text="PWR" FontFamily="Consolas" FontSize="6.8" Foreground="#B8180800"
-                                                       Margin="-14,0,0,0" HorizontalAlignment="Left"/>
+                                        <Grid Width="200" Height="15" Margin="0,0,0,0" HorizontalAlignment="Left" ClipToBounds="False">
+                                            <Canvas x:Name="pwrLegendCanvas" Width="200" Height="15" ClipToBounds="False">
+                                                <TextBlock Text="PWR" Width="36" TextAlignment="Left"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold"
+                                                           Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="9" Canvas.Top="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="10"  Width="20" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="32" Canvas.Top="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="25"  Width="20" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="57" Canvas.Top="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="50"  Width="20" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="102" Canvas.Top="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="100" Width="24" TextAlignment="Center" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="151" Canvas.Top="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="w%"  Width="14" TextAlignment="Left" FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784" Canvas.Left="171" Canvas.Top="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                                                <Rectangle Width="5" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="31" Canvas.Top="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="12" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="48" Canvas.Top="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="32" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="73" Canvas.Top="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="36" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="117" Canvas.Top="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            </Canvas>
                                         </Grid>
-                                        <Grid Width="200" Height="10" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                            <Canvas x:Name="swrLegendCanvas" Width="200" Height="10"/>
-                                            <TextBlock Text="SWR" FontFamily="Consolas" FontSize="6.8" Foreground="#C0180800"
-                                                       Margin="-14,0,0,0" HorizontalAlignment="Left"/>
+                                        <Grid Width="200" Height="10" Margin="0,0,0,0" HorizontalAlignment="Left" ClipToBounds="False">
+                                            <Canvas x:Name="swrLegendCanvas" Width="200" Height="10" ClipToBounds="False">
+                                                <!-- SWR1: the '1' is anchored to SWR segment 1 -->
+                                                <TextBlock Text="SWR" Width="36" TextAlignment="Left"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold"
+                                                           Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="9" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="1" Width="14" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold"
+                                                           Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="25" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <!-- 1.5 on segment 4 -->
+                                                <TextBlock Text="1.5" Width="20" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold"
+                                                           Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="55" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <!-- 3 on segment 8 -->
+                                                <TextBlock Text="3" Width="14" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold"
+                                                           Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="103" Canvas.Top="-4" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                <!-- Infinity on segment 13 -->
+                                                <TextBlock Text="∞" Width="20" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="18"
+                                                           Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="156" Canvas.Top="-9" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+
+                                                <Rectangle Width="22" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="36" Canvas.Top="-1" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                <Rectangle Width="33" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="73" Canvas.Top="-1" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                <Rectangle Width="40" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="116" Canvas.Top="-1" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                            </Canvas>
                                         </Grid>
-                                        <Grid Width="200" Height="24" Margin="0,0,0,0" HorizontalAlignment="Left">
-                                            <Canvas x:Name="swrMeterCanvas" Width="200" Height="24"/>
+                                        <Grid Width="200" Height="16" Margin="0,0,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="swrMeterCanvas" Width="200" Height="16">
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="28" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="39" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="50" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="61" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="72" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="83" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="94" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="11" Height="6" Fill="#14180800" Canvas.Left="105" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="117" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="128" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="139" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="150" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="10" Height="6" Fill="#14180800" Canvas.Left="161" Canvas.Top="-5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            </Canvas>
                                         </Grid>
-                                        <TextBlock Text="ALC   0       5      10"
-                                                   FontFamily="Consolas" FontSize="6.8" Foreground="#C0180800" Width="200" TextAlignment="Left" Margin="7,0,0,0"/>
-                                        <Grid Width="200" Height="24" Margin="0,0,0,1" HorizontalAlignment="Left">
-                                            <Canvas x:Name="alcMeterCanvas" Width="200" Height="24"/>
+                                        <Grid Width="200" Height="10" Margin="0,-18,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="compLegendCanvas" Width="200" Height="10">
+                                                <TextBlock Text="10" Width="16" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="80" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="20" Width="16" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="147" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="dB" Width="12" TextAlignment="Center"
+                                                           FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784"
+                                                           Canvas.Left="161" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="54" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="28" Canvas.Top="3" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="54" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="95" Canvas.Top="3" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            </Canvas>
+                                            <TextBlock Text="COMP" Width="30" TextAlignment="Left"
+                                                       FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784"
+                                                       Margin="3,0,0,0" HorizontalAlignment="Left"/>
+                                        </Grid>
+                                        <Grid Width="200" Height="16" Margin="0,-4,0,0" HorizontalAlignment="Left">
+                                            <Canvas x:Name="alcMeterCanvas" Width="200" Height="16" Margin="6,0,-6,0">
+                                                <Rectangle Width="71" Height="1" Fill="#FF180800" Opacity="0.0784" Canvas.Left="22" Canvas.Top="3" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="22" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="31" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="40" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="49" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="58" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="67" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="76" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="85" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="94" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="103" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="112" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="121" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="130" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="139" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="148" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Rectangle Width="8" Height="6" Fill="#14180800" Canvas.Left="157" Canvas.Top="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            </Canvas>
+                                            <TextBlock Text="ALC" Width="24" TextAlignment="Left"
+                                                       FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="8.2" FontWeight="Bold" Foreground="#FF180800" Opacity="0.0784"
+                                                       Margin="10,4,0,0" HorizontalAlignment="Left"/>
                                         </Grid>
                                         <TextBlock x:Name="txtSmeter" Text="S 0"
-                                                   FontFamily="Consolas" FontSize="7.2" FontWeight="Bold"
-                                                   Foreground="#FF180800" Margin="7,0,0,0" Width="200" TextAlignment="Left"/>
+                                                   FontFamily="pack://application:,,,/Resources/Fonts/helvetica-bold.ttf#Helvetica" FontSize="7.2" FontWeight="Bold"
+                                                   Foreground="#14180800" Margin="7,0,0,0" Width="200" TextAlignment="Left" Visibility="Collapsed"/>
                                     </StackPanel>
 
                                     <!-- Badges + VFO block (right, fixed coordinates) -->
-                                    <Grid Grid.Column="1" Margin="5,0,0,0">
+                                    <Grid Grid.Column="1" Margin="34,0,0,0">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="24"/>
                                             <RowDefinition Height="*"/>
@@ -737,7 +893,7 @@
                                             <Border x:Name="badgeVox" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="220" Canvas.Top="4">
                                                 <TextBlock Text="VOX" Style="{StaticResource LcdBadgeTextTopSmall}"/>
                                             </Border>
-                                            <Border x:Name="badgeProc" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="244" Canvas.Top="4">
+                                            <Border x:Name="badgeProc" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="252" Canvas.Top="4">
                                                 <TextBlock Text="PROC" Style="{StaticResource LcdBadgeTextTopSmall}"/>
                                             </Border>
                                             <Border x:Name="badgeNB" Style="{StaticResource LcdBadge}" Margin="0" Canvas.Left="292" Canvas.Top="4">
@@ -988,8 +1144,12 @@
                                         <RotateTransform x:Name="rtDspSlopeInner" Angle="0"/>
                                     </Grid.RenderTransform>
                                     <Ellipse StrokeThickness="1.4">
-                                        <Ellipse.Fill><StaticResource ResourceKey="KnobInner"/></Ellipse.Fill>
-                                        <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
+                                        <Ellipse.Fill>
+                                            <StaticResource ResourceKey="KnobInner"/>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <StaticResource ResourceKey="KnobRim"/>
+                                        </Ellipse.Stroke>
                                     </Ellipse>
                                     <Rectangle Width="2.3" Height="8.5" RadiusX="1.1" RadiusY="1.1"
                                        Fill="#FFFF9200" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,2,0,0"/>
@@ -1019,11 +1179,21 @@
                               MouseWheel="PhonesKnob_MouseWheel" PreviewMouseWheel="PhonesKnob_MouseWheel"
                               MouseLeftButtonDown="PhonesKnob_MouseLeftButtonDown" MouseMove="PhonesKnob_MouseMove" MouseLeftButtonUp="PhonesKnob_MouseLeftButtonUp">
                             <Ellipse StrokeThickness="2">
-                                <Ellipse.Fill><StaticResource ResourceKey="KnobFace"/></Ellipse.Fill>
-                                <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
-                                <Ellipse.Effect><DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/></Ellipse.Effect>
+                                <Ellipse.Fill>
+                                    <StaticResource ResourceKey="KnobFace"/>
+                                </Ellipse.Fill>
+                                <Ellipse.Stroke>
+                                    <StaticResource ResourceKey="KnobRim"/>
+                                </Ellipse.Stroke>
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/>
+                                </Ellipse.Effect>
                             </Ellipse>
-                            <Ellipse Width="16" Height="16"><Ellipse.Fill><StaticResource ResourceKey="KnobInner"/></Ellipse.Fill></Ellipse>
+                            <Ellipse Width="16" Height="16">
+                                <Ellipse.Fill>
+                                    <StaticResource ResourceKey="KnobInner"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
                             <Rectangle Width="3.5" Height="14" RadiusX="1.5" RadiusY="1.5" Fill="#FFBCBCCA"
                                    VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </Grid>
@@ -1033,11 +1203,21 @@
                               MouseWheel="MicGainKnob_MouseWheel" PreviewMouseWheel="MicGainKnob_MouseWheel"
                               MouseLeftButtonDown="MicGainKnob_MouseLeftButtonDown" MouseMove="MicGainKnob_MouseMove" MouseLeftButtonUp="MicGainKnob_MouseLeftButtonUp">
                             <Ellipse StrokeThickness="2">
-                                <Ellipse.Fill><StaticResource ResourceKey="KnobFace"/></Ellipse.Fill>
-                                <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
-                                <Ellipse.Effect><DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/></Ellipse.Effect>
+                                <Ellipse.Fill>
+                                    <StaticResource ResourceKey="KnobFace"/>
+                                </Ellipse.Fill>
+                                <Ellipse.Stroke>
+                                    <StaticResource ResourceKey="KnobRim"/>
+                                </Ellipse.Stroke>
+                                <Ellipse.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/>
+                                </Ellipse.Effect>
                             </Ellipse>
-                            <Ellipse Width="20" Height="20"><Ellipse.Fill><StaticResource ResourceKey="KnobInner"/></Ellipse.Fill></Ellipse>
+                            <Ellipse Width="20" Height="20">
+                                <Ellipse.Fill>
+                                    <StaticResource ResourceKey="KnobInner"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
                             <Rectangle Width="3.5" Height="16" RadiusX="1.5" RadiusY="1.5" Fill="#FFBCBCCA"
                                    VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </Grid>
@@ -1340,9 +1520,15 @@
                                         <RotateTransform x:Name="rtRitXit" Angle="0"/>
                                     </Grid.RenderTransform>
                                     <Ellipse StrokeThickness="2">
-                                        <Ellipse.Fill><StaticResource ResourceKey="KnobFace"/></Ellipse.Fill>
-                                        <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
-                                        <Ellipse.Effect><DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/></Ellipse.Effect>
+                                        <Ellipse.Fill>
+                                            <StaticResource ResourceKey="KnobFace"/>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <StaticResource ResourceKey="KnobRim"/>
+                                        </Ellipse.Stroke>
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/>
+                                        </Ellipse.Effect>
                                     </Ellipse>
                                     <Rectangle Width="2.6" Height="11" RadiusX="1.2" RadiusY="1.2"
                                                Fill="#FFF0F0F4" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
@@ -1360,9 +1546,18 @@
                                         <RotateTransform x:Name="rtAfRfOuter" Angle="0"/>
                                     </Grid.RenderTransform>
                                     <Ellipse StrokeThickness="2">
-                                        <Ellipse.Fill><RadialGradientBrush><GradientStop Color="#FF444452" Offset="0.45"/><GradientStop Color="#FF20202E" Offset="1"/></RadialGradientBrush></Ellipse.Fill>
-                                        <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
-                                        <Ellipse.Effect><DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/></Ellipse.Effect>
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#FF444452" Offset="0.45"/>
+                                                <GradientStop Color="#FF20202E" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <StaticResource ResourceKey="KnobRim"/>
+                                        </Ellipse.Stroke>
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/>
+                                        </Ellipse.Effect>
                                     </Ellipse>
                                     <Rectangle Width="3.5" Height="15" RadiusX="1.5" RadiusY="1.5" Fill="#FFFF9200" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                                 </Grid>
@@ -1372,7 +1567,17 @@
                                     <Grid.RenderTransform>
                                         <RotateTransform x:Name="rtAfRfInner" Angle="0"/>
                                     </Grid.RenderTransform>
-                                    <Ellipse StrokeThickness="1.5"><Ellipse.Fill><StaticResource ResourceKey="KnobInner"/></Ellipse.Fill><Ellipse.Stroke><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#FF6A6A74" Offset="0"/><GradientStop Color="#FF2A2A36" Offset="1"/></LinearGradientBrush></Ellipse.Stroke></Ellipse>
+                                    <Ellipse StrokeThickness="1.5">
+                                        <Ellipse.Fill>
+                                            <StaticResource ResourceKey="KnobInner"/>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#FF6A6A74" Offset="0"/>
+                                                <GradientStop Color="#FF2A2A36" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Ellipse.Stroke>
+                                    </Ellipse>
                                     <Rectangle Width="2.4" Height="9" RadiusX="1.2" RadiusY="1.2" Fill="#FFFF9200" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,2.5,0,0"/>
                                 </Grid>
                             </Grid>
@@ -1393,9 +1598,15 @@
                                         <RotateTransform x:Name="rtMultiCh" Angle="0"/>
                                     </Grid.RenderTransform>
                                     <Ellipse StrokeThickness="2">
-                                        <Ellipse.Fill><StaticResource ResourceKey="KnobFace"/></Ellipse.Fill>
-                                        <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
-                                        <Ellipse.Effect><DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/></Ellipse.Effect>
+                                        <Ellipse.Fill>
+                                            <StaticResource ResourceKey="KnobFace"/>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <StaticResource ResourceKey="KnobRim"/>
+                                        </Ellipse.Stroke>
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/>
+                                        </Ellipse.Effect>
                                     </Ellipse>
                                     <Rectangle Width="2.6" Height="11" RadiusX="1.2" RadiusY="1.2"
                                                Fill="#FFFF9200" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
@@ -1413,9 +1624,18 @@
                                         <RotateTransform x:Name="rtIfSqlOuter" Angle="0"/>
                                     </Grid.RenderTransform>
                                     <Ellipse StrokeThickness="2">
-                                        <Ellipse.Fill><RadialGradientBrush><GradientStop Color="#FF444452" Offset="0.45"/><GradientStop Color="#FF20202E" Offset="1"/></RadialGradientBrush></Ellipse.Fill>
-                                        <Ellipse.Stroke><StaticResource ResourceKey="KnobRim"/></Ellipse.Stroke>
-                                        <Ellipse.Effect><DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/></Ellipse.Effect>
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#FF444452" Offset="0.45"/>
+                                                <GradientStop Color="#FF20202E" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <StaticResource ResourceKey="KnobRim"/>
+                                        </Ellipse.Stroke>
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2" Opacity="0.7"/>
+                                        </Ellipse.Effect>
                                     </Ellipse>
                                     <Rectangle Width="3.5" Height="15" RadiusX="1.5" RadiusY="1.5" Fill="#FFFF9200" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,5,0,0">
                                         <Rectangle.Effect>
@@ -1429,7 +1649,17 @@
                                     <Grid.RenderTransform>
                                         <RotateTransform x:Name="rtIfSqlInner" Angle="0"/>
                                     </Grid.RenderTransform>
-                                    <Ellipse StrokeThickness="1.5"><Ellipse.Fill><StaticResource ResourceKey="KnobInner"/></Ellipse.Fill><Ellipse.Stroke><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#FF6A6A74" Offset="0"/><GradientStop Color="#FF2A2A36" Offset="1"/></LinearGradientBrush></Ellipse.Stroke></Ellipse>
+                                    <Ellipse StrokeThickness="1.5">
+                                        <Ellipse.Fill>
+                                            <StaticResource ResourceKey="KnobInner"/>
+                                        </Ellipse.Fill>
+                                        <Ellipse.Stroke>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#FF6A6A74" Offset="0"/>
+                                                <GradientStop Color="#FF2A2A36" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Ellipse.Stroke>
+                                    </Ellipse>
                                     <Rectangle Width="2.4" Height="9" RadiusX="1.2" RadiusY="1.2" Fill="#FFFF9200" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,2.5,0,0"/>
                                 </Grid>
                             </Grid>

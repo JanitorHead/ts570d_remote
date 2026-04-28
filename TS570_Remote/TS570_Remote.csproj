@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -22,6 +22,7 @@
 <ItemGroup>
   <Resource Include="Resources\Fonts\DSEG7Classic-BoldItalic.ttf" />
   <Resource Include="Resources\Fonts\DSEG14Classic-Italic.ttf" />
+  <Resource Include="Resources\Fonts\helvetica-bold.ttf" />
 </ItemGroup>
 
 <ItemGroup>
