@@ -1,0 +1,51 @@
+name: Release Build and Upload
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish app (win-x64 self-contained)
+        shell: pwsh
+        run: |
+          dotnet publish "TS570_Remote/TS570_Remote.csproj" `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=false `
+            -o "artifacts/publish"
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $zipName = "TS570_Remote-$tag-win-x64.zip"
+          $zipPath = "artifacts/$zipName"
+          Compress-Archive -Path "artifacts/publish/*" -DestinationPath $zipPath -Force
+
+          $sha = (Get-FileHash -Algorithm SHA256 -Path $zipPath).Hash.ToLower()
+          "$sha *$zipName" | Set-Content -Path "$zipPath.sha256" -Encoding ascii
+
+      - name: Create/Update release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/*.zip
+            artifacts/*.zip.sha256
