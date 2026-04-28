@@ -1,5 +1,7 @@
 # ts570d_remote
 
+**Build:** `v0.2.0` (assembly / informational version in `TS570_Remote.csproj`).
+
 **Disclaimer:** This repository is **vibe coded** (AI-assisted, exploratory hacking) and is **only an experiment**. It is not production software, not audited for safety or correctness, and not a substitute for the manufacturer’s tools or documentation.
 
 ---

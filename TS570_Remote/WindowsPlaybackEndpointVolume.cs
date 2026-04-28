@@ -4,8 +4,8 @@ using NAudio.CoreAudioApi;
 namespace TS570_Remote;
 
 /// <summary>
-/// Nivel maestro del dispositivo de salida WASAPI (mezclador de Windows).
-/// Usado para el knob MIC: nivel hacia la emisora por la interfaz tipo “Speakers (USB)”, sin tocar la entrada que alimenta el monitor RX.
+/// Windows playback endpoint master volume.
+/// Used for the MIC knob: level toward the radio via the Speakers (USB) style endpoint, without touching RX capture feeding the monitor.
 /// </summary>
 internal static class WindowsPlaybackEndpointVolume
 {
