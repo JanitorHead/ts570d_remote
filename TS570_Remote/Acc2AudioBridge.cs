@@ -5,8 +5,8 @@ using NAudio.Wave;
 namespace TS570_Remote;
 
 /// <summary>
-/// NF desde USB/ACC2: captura WASAPI → volumen PHONES en monitor → salida WASAPI.
-/// El nivel MIC se controla en Windows sobre la salida TX (<see cref="WindowsPlaybackEndpointVolume"/>), no aquí.
+/// NF from USB/ACC2: WASAPI capture → PHONES monitor gain → WASAPI playback.
+/// MIC level is controlled in Windows on the TX output (<see cref="WindowsPlaybackEndpointVolume"/>), not here.
 /// </summary>
 internal sealed class Acc2AudioBridge : IDisposable
 {
@@ -21,7 +21,7 @@ internal sealed class Acc2AudioBridge : IDisposable
 
     public bool IsRunning => _playback?.PlaybackState == PlaybackState.Playing;
 
-    /// <summary>Solo PHONES: ganancia de monitor en software. MIC → endpoint Windows.</summary>
+    /// <summary>PHONES only: monitor gain in software. MIC uses Windows TX playback endpoint.</summary>
     public void SetPlaybackMonitorGain(float phones01)
     {
         lock (_gainLock)

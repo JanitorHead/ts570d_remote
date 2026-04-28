@@ -5,13 +5,13 @@ namespace TS570_Remote;
 
 public sealed class AppSettings
 {
-    /// <summary>Salida WASAPI donde se monitoriza el audio de recepción en el PC (equivalente al monitor; knob PHONES en software).</summary>
+    /// <summary>WASAPI playback device used for RX monitoring on the PC (PHONES knob applies software gain).</summary>
     public string? AudioPlaybackDeviceId { get; set; }
 
-    /// <summary>Salida WASAPI cuyo volumen maestro de Windows ajusta el knob MIC (audio PC→emisora; equivalente a “Output” en WSJT-X).</summary>
+    /// <summary>WASAPI playback device whose Windows master level is driven by the MIC knob (PC→radio TX path; WSJT-X Output).</summary>
     public string? AudioTxPlaybackDeviceId { get; set; }
 
-    /// <summary>Entrada WASAPI: interfaz USB en el camino ACC2 → PC (audio que sale de la emisora, no CAT/OmniRig).</summary>
+    /// <summary>WASAPI capture from ACC2→PC (audio from the radio; not CAT/OmniRig).</summary>
     public string? AudioCaptureDeviceId { get; set; }
 
     private static string FilePath =>

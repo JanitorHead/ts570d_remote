@@ -48,9 +48,9 @@ public partial class AudioSettingsWindow : Window
 
     private void LoadDevices()
     {
-        LoadCombo(cmbCapture, AudioDeviceHelper.GetCaptureDevices(), "(No hay dispositivos de entrada)");
-        LoadCombo(cmbPlayback, AudioDeviceHelper.GetPlaybackDevices(), "(No hay dispositivos de salida)");
-        LoadCombo(cmbTxPlayback, AudioDeviceHelper.GetPlaybackDevices(), "(No hay dispositivos de salida)");
+        LoadCombo(cmbCapture, AudioDeviceHelper.GetCaptureDevices(), "(No input devices)");
+        LoadCombo(cmbPlayback, AudioDeviceHelper.GetPlaybackDevices(), "(No output devices)");
+        LoadCombo(cmbTxPlayback, AudioDeviceHelper.GetPlaybackDevices(), "(No output devices)");
     }
 
     private static void SaveIfValid(ComboBox cmb, Action<string?> setter)

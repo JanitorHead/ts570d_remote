@@ -32,7 +32,7 @@ internal static class AudioDeviceHelper
         return list;
     }
 
-    /// <summary>Entradas de grabación (p. ej. interfaz USB en el camino ACC2 → PC).</summary>
+    /// <summary>Recording inputs (e.g. USB interface on ACC2→PC path).</summary>
     public static IReadOnlyList<AudioDeviceInfo> GetCaptureDevices()
     {
         var list = new List<AudioDeviceInfo>();

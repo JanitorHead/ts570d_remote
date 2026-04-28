@@ -69,7 +69,7 @@ namespace TS570_Remote
 
             ledCatGreen.Visibility = Visibility.Hidden;
             ledCatAmber.Visibility = Visibility.Visible;
-            txtStatusLeft.Text = "Local: panel simulado · CAT/OmniRig pendiente · audio vía USB/ACC2";
+            txtStatusLeft.Text = "Local: simulated panel · CAT/OmniRig pending · audio via USB/ACC2";
 
             if (!string.IsNullOrEmpty(_settings.AudioTxPlaybackDeviceId)
                 && WindowsPlaybackEndpointVolume.TryGetMasterVolumeScalar(_settings.AudioTxPlaybackDeviceId, out float micScalar))
@@ -108,7 +108,7 @@ namespace TS570_Remote
             {
                 MessageBox.Show(
                     this,
-                    "Configura antes la entrada (USB / ACC2) y la salida en Configuración → Audio (USB / ACC2)….",
+                    "Set capture (USB / ACC2) and monitor playback under Settings → Audio (USB / ACC2) first.",
                     "Monitor ACC2",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -128,7 +128,7 @@ namespace TS570_Remote
             {
                 menuMonitorAcc2.IsChecked = false;
                 MessageBox.Show(this,
-                    "No se pudo abrir WASAPI capture/playback.\r\n\r\n" + ex.Message,
+                    "Could not open WASAPI capture/playback.\r\n\r\n" + ex.Message,
                     "Monitor ACC2",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -162,7 +162,7 @@ namespace TS570_Remote
             if (dlg.ShowDialog() != true)
                 return;
 
-            txtStatusRight.Text = "  Audio USB/ACC2 guardado";
+            txtStatusRight.Text = "  Audio USB/ACC2 saved";
             if (menuMonitorAcc2.IsChecked == true)
                 TryStartAcc2Monitor();
         }
@@ -178,10 +178,10 @@ namespace TS570_Remote
         {
             MessageBox.Show(
                 this,
-                "TS570 Remote — panel local; CAT/OmniRig para comando de radio.\n"
-                + "Audio NF: interfaz(es) USB conectada(s) al ACC2 (no pasa por OmniRig).\n\n"
-                + $"Ajustes: {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TS570_Remote")}",
-                "Acerca de TS570 Remote",
+                "TS570 Remote — local front panel; CAT/OmniRig drives radio commands.\n"
+                + "Audio NF: USB interface(s) on ACC2 (not via OmniRig).\n\n"
+                + $"Settings folder: {Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TS570_Remote")}",
+                "About TS570 Remote",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }

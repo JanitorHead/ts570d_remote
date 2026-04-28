@@ -1,4 +1,4 @@
-<Window x:Class="TS570_Remote.MainWindow"
+﻿<Window x:Class="TS570_Remote.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -563,19 +563,19 @@
                                     <Setter Property="FontSize" Value="11"/>
                                 </Style>
                             </Menu.Resources>
-                            <MenuItem Header="_Archivo">
-                                <MenuItem Header="_Salir" Click="MenuArchivoSalir_Click"/>
+                            <MenuItem Header="_File">
+                                <MenuItem Header="_Exit" Click="MenuArchivoSalir_Click"/>
                             </MenuItem>
-                            <MenuItem Header="_Configuración">
+                            <MenuItem Header="_Settings">
                                 <MenuItem x:Name="menuMonitorAcc2" Header="Monitor _ACC2 (USB)" IsCheckable="True"
                                           Checked="MenuMonitorAcc2_Checked" Unchecked="MenuMonitorAcc2_Unchecked"/>
                                 <Separator/>
                                 <MenuItem Header="_Audio (USB / ACC2)…" Click="MenuConfigAudio_Click"/>
                                 <Separator/>
-                                <MenuItem Header="_Abrir carpeta de datos…" Click="MenuConfigOpenDataFolder_Click"/>
+                                <MenuItem Header="_Open data folder…" Click="MenuConfigOpenDataFolder_Click"/>
                             </MenuItem>
-                            <MenuItem Header="_Ayuda">
-                                <MenuItem Header="_Acerca de…" Click="MenuAyudaAcerca_Click"/>
+                            <MenuItem Header="_Help">
+                                <MenuItem Header="_About…" Click="MenuAyudaAcerca_Click"/>
                             </MenuItem>
                         </Menu>
                         <Button x:Name="btnSynchronize" DockPanel.Dock="Right"
