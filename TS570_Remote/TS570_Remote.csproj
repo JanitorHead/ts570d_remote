@@ -9,9 +9,7 @@
   </PropertyGroup>
 
 <ItemGroup>
-  <Reference Include="Interop.OmniRig">
-    <HintPath>libraries\Interop.OmniRig.dll</HintPath>
-  </Reference>
+  <Compile Remove="MainWindow.xaml.cs" />
 </ItemGroup>
 
 <ItemGroup>
@@ -27,6 +25,10 @@
 
 <ItemGroup>
   <None Include="CatCommandMap.json" CopyToOutputDirectory="PreserveNewest" />
+</ItemGroup>
+
+<ItemGroup>
+  <PackageReference Include="NAudio" Version="2.2.1" />
 </ItemGroup>
 
 </Project>

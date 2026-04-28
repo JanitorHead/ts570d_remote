@@ -1,4 +1,4 @@
-﻿<Window x:Class="TS570_Remote.MainWindow"
+<Window x:Class="TS570_Remote.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -445,6 +445,11 @@
         <Style x:Key="LcdBadgeTextInverted" TargetType="TextBlock" BasedOn="{StaticResource LcdBadgeText}">
             <Setter Property="Foreground"   Value="#FFF4F4F4"/>
             <Setter Property="FontSize"     Value="12.8"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Border}, Path=Opacity}" Value="1">
+                    <Setter Property="Foreground" Value="#FFFFBA00"/>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="LcdBadgeTextTopSmall" TargetType="TextBlock" BasedOn="{StaticResource LcdBadgeText}">
             <Setter Property="FontSize"     Value="10.8"/>
@@ -532,14 +537,14 @@
             </Border.Effect>
 
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="30"/>
-                    <RowDefinition Height="176"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="34"/>
-                </Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="34"/>
+                        <RowDefinition Height="176"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="34"/>
+                    </Grid.RowDefinitions>
 
-                <!-- ══ TITLE BAR ═══════════════════════════════════════════════ -->
+                <!-- ══ TITLE BAR + MENU ═════════════════════════════════════════ -->
                 <Border Grid.Row="0" CornerRadius="6,6,0,0">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -547,13 +552,39 @@
                             <GradientStop Color="#FF1E1E2C" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
-                    <DockPanel Margin="12,0,12,0" VerticalAlignment="Center">
+                    <DockPanel Margin="4,0,12,0" VerticalAlignment="Center">
+                        <Menu DockPanel.Dock="Left"
+                              Background="Transparent"
+                              VerticalAlignment="Center">
+                            <Menu.Resources>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Foreground" Value="#FFD8D8E0"/>
+                                    <Setter Property="FontFamily" Value="Segoe UI"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                </Style>
+                            </Menu.Resources>
+                            <MenuItem Header="_Archivo">
+                                <MenuItem Header="_Salir" Click="MenuArchivoSalir_Click"/>
+                            </MenuItem>
+                            <MenuItem Header="_Configuración">
+                                <MenuItem x:Name="menuMonitorAcc2" Header="Monitor _ACC2 (USB)" IsCheckable="True"
+                                          Checked="MenuMonitorAcc2_Checked" Unchecked="MenuMonitorAcc2_Unchecked"/>
+                                <Separator/>
+                                <MenuItem Header="_Audio (USB / ACC2)…" Click="MenuConfigAudio_Click"/>
+                                <Separator/>
+                                <MenuItem Header="_Abrir carpeta de datos…" Click="MenuConfigOpenDataFolder_Click"/>
+                            </MenuItem>
+                            <MenuItem Header="_Ayuda">
+                                <MenuItem Header="_Acerca de…" Click="MenuAyudaAcerca_Click"/>
+                            </MenuItem>
+                        </Menu>
                         <Button x:Name="btnSynchronize" DockPanel.Dock="Right"
                             Content="Synchronize" Style="{StaticResource OrangeBtn}"
                             Width="100" Height="22" Click="btnSynchronize_Click"/>
                         <TextBlock Text="REMOTE  •  HF TRANSCEIVER  •  TS-570D"
                                FontFamily="Consolas" FontSize="12" FontWeight="Bold"
-                               Foreground="#FFCACAD2" VerticalAlignment="Center"/>
+                               Foreground="#FFCACAD2" VerticalAlignment="Center"
+                               TextAlignment="Center"/>
                     </DockPanel>
                 </Border>
 
@@ -634,7 +665,7 @@
                                        Foreground="#FFB0B0BC" FontFamily="Consolas" FontSize="8" FontWeight="Bold"
                                        HorizontalAlignment="Center" Margin="0,0,0,3"/>
                             <Button x:Name="btnAtTune" Style="{StaticResource PillBtn}"
-                                    HorizontalAlignment="Stretch" Click="btnAtTune_Click"/>
+                                    HorizontalAlignment="Stretch" Click="btnAtTune_Click" PreviewMouseLeftButtonDown="btnAtTune_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="btnAtTune_PreviewMouseLeftButtonUp"/>
                         </StackPanel>
 
                     </UniformGrid>
@@ -1162,66 +1193,132 @@
                 <!-- ══ ROW 2 - MAIN CONTROLS ═══════════════════════════════════ -->
                 <Grid Grid.Row="2" Margin="4,0,4,4">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="72"/>
+                        <ColumnDefinition Width="90"/>
                         <ColumnDefinition Width="112"/>
                         <ColumnDefinition Width="76"/>
                         <ColumnDefinition Width="118"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="225"/>
+                        <ColumnDefinition Width="*" MinWidth="188"/>
+                        <ColumnDefinition Width="188"/>
                         <ColumnDefinition Width="218"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- COL 0: PHONES / MIC -->
-                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,0,0">
-                        <TextBlock Text="PHONES" Foreground="{StaticResource UiTextGray}" FontFamily="Consolas" FontSize="8.5"
-                               HorizontalAlignment="Center" Margin="0,4,0,2"/>
-                        <Grid HorizontalAlignment="Center" Width="46" Height="46" Margin="0,0,0,10"
+                    <!-- COL 0: nivel PHONES / MIC + knobs -->
+                    <Grid Grid.Column="0" Margin="0,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="PHONES"
+                                   Foreground="{StaticResource UiTextGray}" FontFamily="Consolas" FontSize="8.5"
+                                   HorizontalAlignment="Center" Margin="0,4,0,2"/>
+
+                        <Border x:Name="meterPhonesTrack"
+                                Grid.Row="1" Grid.Column="0"
+                                Width="10" Height="46"
+                                Margin="0,0,6,10"
+                                VerticalAlignment="Center"
+                                CornerRadius="2"
+                                Background="#15151C"
+                                BorderBrush="#383848"
+                                BorderThickness="1"
+                                SnapsToDevicePixels="True">
+                            <Border ClipToBounds="True" CornerRadius="2">
+                                <Rectangle x:Name="meterPhonesFill"
+                                           Fill="#FFFF9200"
+                                           VerticalAlignment="Bottom"
+                                           HorizontalAlignment="Stretch"
+                                           Height="0"/>
+                            </Border>
+                        </Border>
+
+                        <Grid Grid.Row="1" Grid.Column="1"
+                              HorizontalAlignment="Center" Width="46" Height="46" Margin="0,0,0,10"
                               MouseWheel="PhonesKnob_MouseWheel" PreviewMouseWheel="PhonesKnob_MouseWheel"
                               MouseLeftButtonDown="PhonesKnob_MouseLeftButtonDown" MouseMove="PhonesKnob_MouseMove" MouseLeftButtonUp="PhonesKnob_MouseLeftButtonUp">
-                            <Ellipse StrokeThickness="2">
-                                <Ellipse.Fill>
-                                    <StaticResource ResourceKey="KnobFace"/>
-                                </Ellipse.Fill>
-                                <Ellipse.Stroke>
-                                    <StaticResource ResourceKey="KnobRim"/>
-                                </Ellipse.Stroke>
-                                <Ellipse.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/>
-                                </Ellipse.Effect>
-                            </Ellipse>
-                            <Ellipse Width="16" Height="16">
-                                <Ellipse.Fill>
-                                    <StaticResource ResourceKey="KnobInner"/>
-                                </Ellipse.Fill>
-                            </Ellipse>
-                            <Rectangle Width="3.5" Height="14" RadiusX="1.5" RadiusY="1.5" Fill="#FFBCBCCA"
-                                   VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            <Grid RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <RotateTransform x:Name="rtPhones" Angle="0"/>
+                                </Grid.RenderTransform>
+                                <Ellipse StrokeThickness="2">
+                                    <Ellipse.Fill>
+                                        <StaticResource ResourceKey="KnobFace"/>
+                                    </Ellipse.Fill>
+                                    <Ellipse.Stroke>
+                                        <StaticResource ResourceKey="KnobRim"/>
+                                    </Ellipse.Stroke>
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                                <Ellipse Width="16" Height="16">
+                                    <Ellipse.Fill>
+                                        <StaticResource ResourceKey="KnobInner"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <Rectangle Width="3.5" Height="14" RadiusX="1.5" RadiusY="1.5" Fill="#FFBCBCCA"
+                                           VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </Grid>
                         </Grid>
-                        <TextBlock Text="MIC" Foreground="{StaticResource UiTextGray}" FontFamily="Consolas" FontSize="8.5"
-                               HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                        <Grid HorizontalAlignment="Center" Width="52" Height="52"
+
+                        <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="MIC"
+                                   Foreground="{StaticResource UiTextGray}" FontFamily="Consolas" FontSize="8.5"
+                                   HorizontalAlignment="Center" Margin="0,0,0,2"/>
+
+                        <Border x:Name="meterMicTrack"
+                                Grid.Row="3" Grid.Column="0"
+                                Width="10" Height="52"
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                CornerRadius="2"
+                                Background="#15151C"
+                                BorderBrush="#383848"
+                                BorderThickness="1"
+                                SnapsToDevicePixels="True">
+                            <Border ClipToBounds="True" CornerRadius="2">
+                                <Rectangle x:Name="meterMicFill"
+                                           Fill="#FFFF9200"
+                                           VerticalAlignment="Bottom"
+                                           HorizontalAlignment="Stretch"
+                                           Height="0"/>
+                            </Border>
+                        </Border>
+
+                        <Grid Grid.Row="3" Grid.Column="1"
+                              HorizontalAlignment="Center" Width="52" Height="52"
                               MouseWheel="MicGainKnob_MouseWheel" PreviewMouseWheel="MicGainKnob_MouseWheel"
                               MouseLeftButtonDown="MicGainKnob_MouseLeftButtonDown" MouseMove="MicGainKnob_MouseMove" MouseLeftButtonUp="MicGainKnob_MouseLeftButtonUp">
-                            <Ellipse StrokeThickness="2">
-                                <Ellipse.Fill>
-                                    <StaticResource ResourceKey="KnobFace"/>
-                                </Ellipse.Fill>
-                                <Ellipse.Stroke>
-                                    <StaticResource ResourceKey="KnobRim"/>
-                                </Ellipse.Stroke>
-                                <Ellipse.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/>
-                                </Ellipse.Effect>
-                            </Ellipse>
-                            <Ellipse Width="20" Height="20">
-                                <Ellipse.Fill>
-                                    <StaticResource ResourceKey="KnobInner"/>
-                                </Ellipse.Fill>
-                            </Ellipse>
-                            <Rectangle Width="3.5" Height="16" RadiusX="1.5" RadiusY="1.5" Fill="#FFBCBCCA"
-                                   VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            <Grid RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <RotateTransform x:Name="rtMicGain" Angle="0"/>
+                                </Grid.RenderTransform>
+                                <Ellipse StrokeThickness="2">
+                                    <Ellipse.Fill>
+                                        <StaticResource ResourceKey="KnobFace"/>
+                                    </Ellipse.Fill>
+                                    <Ellipse.Stroke>
+                                        <StaticResource ResourceKey="KnobRim"/>
+                                    </Ellipse.Stroke>
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.7"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                                <Ellipse Width="20" Height="20">
+                                    <Ellipse.Fill>
+                                        <StaticResource ResourceKey="KnobInner"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <Rectangle Width="3.5" Height="16" RadiusX="1.5" RadiusY="1.5" Fill="#FFBCBCCA"
+                                           VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </Grid>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
 
                     <!-- COL 1: NUMERIC GRID (12 round buttons + labels) -->
                     <Grid Grid.Column="1" Margin="0,0,0,0">
@@ -1356,10 +1453,10 @@
                             <TextBlock x:Name="txtTuneStep" Text="1 kHz" FontFamily="Consolas" FontSize="10.5" Foreground="#FFAAAABC" VerticalAlignment="Center" Margin="4,0" MinWidth="48" TextAlignment="Center"/>
                             <Button x:Name="btnStepUp" Content="&gt;" Margin="2,2" Width="30" Height="26" FontSize="15" FontWeight="Bold" Click="btnStepUp_Click"/>
                         </StackPanel>
-                        <Grid Width="200" Height="200"
+                        <Grid Width="176" Height="176"
                               MouseWheel="VfoMainKnob_MouseWheel" PreviewMouseWheel="VfoMainKnob_MouseWheel"
                               MouseLeftButtonDown="VfoMainKnob_MouseLeftButtonDown" MouseMove="VfoMainKnob_MouseMove" MouseLeftButtonUp="VfoMainKnob_MouseLeftButtonUp">
-                            <Ellipse StrokeThickness="4.5">
+                            <Ellipse StrokeThickness="4">
                                 <Ellipse.Fill>
                                     <RadialGradientBrush>
                                         <GradientStop Color="#FF3A3A46" Offset="0.55"/>
@@ -1375,7 +1472,7 @@
                                     </LinearGradientBrush>
                                 </Ellipse.Stroke>
                                 <Ellipse.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="14" ShadowDepth="5" Opacity="0.88"/>
+                                    <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="4" Opacity="0.88"/>
                                 </Ellipse.Effect>
                             </Ellipse>
 
@@ -1383,7 +1480,7 @@
                                 <Grid.RenderTransform>
                                     <RotateTransform x:Name="rtVfoMain" Angle="0"/>
                                 </Grid.RenderTransform>
-                                <Ellipse Width="170" Height="170" StrokeThickness="2.2">
+                                <Ellipse Width="150" Height="150" StrokeThickness="2">
                                     <Ellipse.Fill>
                                         <RadialGradientBrush Center="0.38,0.34" GradientOrigin="0.34,0.28">
                                             <GradientStop Color="#FF5A5A66" Offset="0"/>
@@ -1400,7 +1497,7 @@
                                 </Ellipse>
 
                                 <!-- Finger indentation (no linear marker) -->
-                                <Ellipse Width="54" Height="54" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="46,54,0,0">
+                                <Ellipse Width="48" Height="48" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="40,48,0,0">
                                     <Ellipse.Fill>
                                         <RadialGradientBrush Center="0.28,0.28" GradientOrigin="0.25,0.25">
                                             <GradientStop Color="#FF6D6D78" Offset="0"/>
@@ -1416,17 +1513,17 @@
                                     </Ellipse.Stroke>
                                 </Ellipse>
 
-                                <Ellipse Width="170" Height="170" StrokeThickness="0.6" Stroke="#22FFFFFF" Fill="Transparent"/>
+                                <Ellipse Width="150" Height="150" StrokeThickness="0.6" Stroke="#22FFFFFF" Fill="Transparent"/>
                             </Grid>
                         </Grid>
                     </StackPanel>
 
                     <!-- COL 5: DOWN/UP + QUICK MEMO + SPLIT BUTTONS -->
-                    <StackPanel Grid.Column="5" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-10,0,0">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="3,0">
-                                <TextBlock Text="DOWN" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                                <Button x:Name="btnFreqDown" Style="{StaticResource LightRoundVfoBtn}" Width="42" Height="42" Click="btnFreqDown_Click">
+                    <StackPanel Grid.Column="5" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="6,-10,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,3">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="2,0">
+                                <TextBlock Text="DOWN" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                <Button x:Name="btnFreqDown" Style="{StaticResource LightRoundVfoBtn}" Width="34" Height="34" Click="btnFreqDown_Click">
                                     <Button.Content>
                                         <Grid>
                                             <Border Width="24" Height="4" CornerRadius="2"
@@ -1444,9 +1541,9 @@
                                     </Button.Content>
                                 </Button>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="3,0">
-                                <TextBlock Text="UP" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                                <Button x:Name="btnFreqUp" Style="{StaticResource LightRoundVfoBtn}" Width="42" Height="42" Click="btnFreqUp_Click">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="2,0">
+                                <TextBlock Text="UP" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                <Button x:Name="btnFreqUp" Style="{StaticResource LightRoundVfoBtn}" Width="34" Height="34" Click="btnFreqUp_Click">
                                     <Button.Content>
                                         <Grid>
                                             <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-2,-2,0,0">
@@ -1465,14 +1562,14 @@
                                     </Button.Content>
                                 </Button>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="2,0,1,0">
-                                <TextBlock Text="MR" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                                <Button x:Name="btnQmMR" Style="{StaticResource RoundVfoBtn}" Width="34" Height="34" FontSize="8" Content="" Click="btnQmMR_Click"/>
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="1,0,1,0">
+                                <TextBlock Text="MR" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                <Button x:Name="btnQmMR" Style="{StaticResource RoundVfoBtn}" Width="28" Height="28" FontSize="8" Content="" Click="btnQmMR_Click"/>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="2,0,2,0">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="1,0,1,0">
                                 <TextBlock Text="" FontSize="8" Margin="0,0,0,2"/>
-                                <Button x:Name="btnQmMIn" Style="{StaticResource RoundVfoBtn}" Width="34" Height="34" FontSize="7.5" Content="" Click="btnQmMIn_Click"/>
-                                <TextBlock Text="M.IN" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                <Button x:Name="btnQmMIn" Style="{StaticResource RoundVfoBtn}" Width="28" Height="28" FontSize="7.5" Content="" Click="btnQmMIn_Click"/>
+                                <TextBlock Text="M.IN" Foreground="{StaticResource UiTextWhite}" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                             </StackPanel>
                         </StackPanel>
                         <!-- Kept for compatibility -->
@@ -1480,22 +1577,22 @@
                             <Button x:Name="btnQmPlus" Content="+" Click="btnQmPlus_Click"/>
                             <Button x:Name="btnQmMinus" Content="-" Click="btnQmMinus_Click"/>
                         </StackPanel>
-                        <UniformGrid Rows="1" Columns="4" HorizontalAlignment="Center" Margin="0,0,0,4">
-                            <Button x:Name="btnSplit" Content="SPLIT" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnSplit_Click"/>
-                            <Button x:Name="btnTfSet" Content="TF-set" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnTfSet_Click"/>
-                            <Button x:Name="btnAB" Content="A / B" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnAB_Click"/>
-                            <Button x:Name="btnRit" Content="RIT" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnRit_Click"/>
+                        <UniformGrid Rows="1" Columns="4" HorizontalAlignment="Center" Margin="0,0,0,3">
+                            <Button x:Name="btnSplit" Content="SPLIT" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="8" Click="btnSplit_Click"/>
+                            <Button x:Name="btnTfSet" Content="TF-set" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="7.5" Click="btnTfSet_Click" PreviewMouseLeftButtonDown="btnTfSet_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="btnTfSet_PreviewMouseLeftButtonUp"/>
+                            <Button x:Name="btnAB" Content="A / B" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="8" Click="btnAB_Click"/>
+                            <Button x:Name="btnRit" Content="RIT" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="8" Click="btnRit_Click"/>
                         </UniformGrid>
-                        <UniformGrid Rows="1" Columns="4" HorizontalAlignment="Center" Margin="0,0,0,4">
-                            <Button x:Name="btnMV" Content="M / V" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnMV_Click"/>
-                            <Button x:Name="btnAeqB" Content="A = B" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnAeqB_Click"/>
-                            <Button x:Name="btnCLS" Content="CLS" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnCLS_Click"/>
-                            <Button x:Name="btnXit" Content="XIT" Style="{StaticResource LightRoundVfoBtn}" Margin="2,2" Click="btnXit_Click"/>
+                        <UniformGrid Rows="1" Columns="4" HorizontalAlignment="Center" Margin="0,0,0,3">
+                            <Button x:Name="btnMV" Content="M / V" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="8" Click="btnMV_Click"/>
+                            <Button x:Name="btnAeqB" Content="A = B" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="7.5" Click="btnAeqB_Click"/>
+                            <Button x:Name="btnCLS" Content="CLS" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="8" Click="btnCLS_Click"/>
+                            <Button x:Name="btnXit" Content="XIT" Style="{StaticResource LightRoundVfoBtn}" Width="36" Height="36" Margin="1,1" FontSize="8" Click="btnXit_Click"/>
                         </UniformGrid>
                         <UniformGrid Rows="1" Columns="3" HorizontalAlignment="Center">
-                            <Button x:Name="btnScan" Content="SCAN" Style="{StaticResource PillBtn}" Margin="0,2,4,2" FontSize="9.5" Click="btnScan_Click"/>
-                            <Button x:Name="btnMVfo" Content="M&gt;VFO" Style="{StaticResource PillBtn}" Margin="4,2,4,2" FontSize="9.5" Click="btnMVfo_Click"/>
-                            <Button x:Name="btnMIn" Content="M.IN" Style="{StaticResource PillBtn}" Margin="4,2,0,2" FontSize="9.5" Click="btnMIn_Click"/>
+                            <Button x:Name="btnScan" Content="SCAN" Style="{StaticResource PillBtn}" Margin="0,2,3,2" FontSize="8.5" Padding="6,3" Click="btnScan_Click"/>
+                            <Button x:Name="btnMVfo" Content="M&gt;VFO" Style="{StaticResource PillBtn}" Margin="3,2,3,2" FontSize="8.5" Padding="6,3" Click="btnMVfo_Click"/>
+                            <Button x:Name="btnMIn" Content="M.IN" Style="{StaticResource PillBtn}" Margin="3,2,0,2" FontSize="8.5" Padding="6,3" Click="btnMIn_Click"/>
                         </UniformGrid>
                     </StackPanel>
 
@@ -1680,7 +1777,7 @@
                     </Border.Background>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock x:Name="txtStatusLeft"
-                               Text="OmniRig - waiting for connection..."
+                               Text="Local simulation - ready"
                                FontFamily="Consolas" FontSize="8.5"
                                Foreground="#FF646472" Margin="0,0,18,0"/>
                         <TextBlock Text="CAT: " FontFamily="Consolas" FontSize="8.5" Foreground="#FF646472"/>

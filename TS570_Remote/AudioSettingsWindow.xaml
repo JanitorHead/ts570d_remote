@@ -1,0 +1,69 @@
+<Window x:Class="TS570_Remote.AudioSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Audio — ACC2 / USB"
+        Height="520" Width="540"
+        MinHeight="460" MinWidth="480"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Background="#FF16161C">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0"
+                   Text="Como en WSJT-X: Input = audio desde la emisora hacia el PC; Output (monitor) = dónde escuchas en el PC; Output (TX / MIC) = altavoces USB hacia la emisora para transmitir."
+                   Foreground="#FFFFB040" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap"
+                   Margin="0,0,0,12"/>
+
+        <TextBlock Grid.Row="1" Text="Input — entrada (captura)"
+                   Foreground="#FFE0E0E8" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="2"
+                   Text="Interfaz USB / línea desde ACC2 (audio de RX hacia Windows)."
+                   Foreground="#FF8A8A96" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <ComboBox x:Name="cmbCapture"
+                  Grid.Row="3"
+                  FontFamily="Consolas" FontSize="10"
+                  Margin="0,0,0,14"
+                  DisplayMemberPath="FriendlyName"/>
+
+        <TextBlock Grid.Row="4" Text="Output — salida para monitor (knob PHONES en la app)"
+                   Foreground="#FFE0E0E8" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="5"
+                   Text="Altavoces o auriculares donde suena el monitor ACC2 (solo ganancia en software sobre esa ruta)."
+                   Foreground="#FF8A8A96" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <ComboBox x:Name="cmbPlayback"
+                  Grid.Row="6"
+                  VerticalAlignment="Top"
+                  FontFamily="Consolas" FontSize="10"
+                  Margin="0,0,0,14"
+                  DisplayMemberPath="FriendlyName"/>
+
+        <TextBlock Grid.Row="7" Text="Output — salida para transmitir (knob MIC → volumen Windows)"
+                   Foreground="#FFE0E0E8" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="8"
+                   Text="El mismo tipo que “Speakers (USB …)” en WSJT-X: nivel maestro de esa salida hacia la emisora, sin bajar la entrada de captura ni el monitor."
+                   Foreground="#FF8A8A96" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <ComboBox x:Name="cmbTxPlayback"
+                  Grid.Row="9"
+                  VerticalAlignment="Top"
+                  FontFamily="Consolas" FontSize="10"
+                  DisplayMemberPath="FriendlyName"/>
+
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Aceptar" Width="90" Height="26" Margin="0,0,8,0" IsDefault="True" Click="BtnOk_Click"/>
+            <Button Content="Cancelar" Width="90" Height="26" IsCancel="True" Click="BtnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
