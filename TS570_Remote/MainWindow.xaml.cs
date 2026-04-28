@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -107,21 +107,7 @@ namespace TS570_Remote
         private bool   _freqEntry  = false;
         private string _freqBuffer = "";
 
-        // ── CAT meters (CustomReply) ─────────────────────────────────────────
-        private bool _omniRigCustomReplyHooked;
-        private int _txCatMeterSeq; // 0..3: SM (S/PWR), RM1 (SWR), RM;, RM2 (ALC), RM;
-        private int _rmParseAs;     // 1=SWR, 2=ALC (after RM1/RM2 select)
-
-        private bool _hasCatSm, _hasCatPwr, _hasCatSwr, _hasCatAlc;
-        private double _catSmN, _catPwrN, _catSwrN, _catAlcN;
-        private int _catSmRaw = -1;
-        private readonly List<Border> _sharedMeterSegments = new();
-        private readonly List<Border> _swrMeterSegments = new();
-        private readonly List<Border> _alcMeterSegments = new();
-        private const int SharedMeterSegmentCount = 33; // S-meter / PWR shared arc
-        private const int AuxMeterSegmentCount = 20;    // SWR / ALC arcs
-        private const double MeterPad = 7.0;
-        private const double MeterGhostOpacity = 20.0 / 255.0; // Same as VFO ghost (#14...)
+        // Meter rendering is static ghosting in XAML only.
 
         // ══════════════════════════════════════════════════════════════════════
         // CONSTRUCTOR
@@ -129,15 +115,17 @@ namespace TS570_Remote
         public MainWindow()
         {
             InitializeComponent();
+
+            UpdateLcdBadges();        // initial printed/ghost state
+            UpdateTuneStepLabel();
+
+            if (DesignerProperties.GetIsInDesignMode(this))
+                return;
+
             UpdateFrequencyCanvasOffsets(_localVfoHz);
             LoadCommandMap();
             ValidateRequiredLeftPanelMappings();
             InitializeCatConnection();
-            Closed += (_, _) => DetachOmniRigCustomReply();
-            InitializeSharedMeterSegments();
-            InitializeMeterLegends();
-            UpdateLcdBadges();        // initial state
-            UpdateTuneStepLabel();
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -154,7 +142,6 @@ namespace TS570_Remote
                 ledCatGreen.Visibility = Visibility.Visible;
                 ledCatAmber.Visibility = Visibility.Hidden;
                 txtStatusLeft.Text = "OmniRig OK – sondeando...";
-                TryAttachOmniRigCustomReply();
             }
             catch (Exception ex)
             {
@@ -189,7 +176,7 @@ namespace TS570_Remote
 
                 // TX/RX state from the radio
                 bool tx = rigControl.Rig1.Tx == OmniRig.RigParamX.PM_TX;
-                if (tx != _isTx) { _isTx = tx; _txCatMeterSeq = 0; _rmParseAs = 0; UpdateLcdBadges(); }
+                if (tx != _isTx) { _isTx = tx; UpdateLcdBadges(); }
 
                 // Keep TX power badge synchronized with rig state.
                 if (TryReadTxPower(out int pwrNow))
@@ -204,9 +191,6 @@ namespace TS570_Remote
                     }
                     _txPwrKnown = true;
                 }
-
-                UpdateDisplayMeters();
-                RequestNextKenwoodMeterQuery();
 
                 // Status bar
                 txtStatusLeft.Text =
@@ -225,152 +209,7 @@ namespace TS570_Remote
             }
         }
 
-        private void DetachOmniRigCustomReply()
-        {
-            if (!_omniRigCustomReplyHooked || rigControl == null) return;
-            try
-            {
-                rigControl.CustomReply -= OmniRigX_CustomReply;
-            }
-            catch (Exception ex) { Debug.WriteLine("CustomReply unhook: " + ex.Message); }
-            _omniRigCustomReplyHooked = false;
-        }
-
-        private void TryAttachOmniRigCustomReply()
-        {
-            if (rigControl == null || _omniRigCustomReplyHooked) return;
-            try
-            {
-                rigControl.CustomReply += OmniRigX_CustomReply;
-                _omniRigCustomReplyHooked = true;
-            }
-            catch (Exception ex) { Debug.WriteLine("CustomReply hook: " + ex.Message); }
-        }
-
-        private void OmniRigX_CustomReply(int rigNumber, object command, object reply)
-            => OnKenwoodCustomReplyData(rigNumber, command, reply);
-
-        private void OnKenwoodCustomReplyData(int rigNumber, object command, object reply)
-        {
-            if (rigNumber != 1) return;
-            string cmd = VariantToAnsiString(command);
-            string ans = VariantToAnsiString(reply);
-            _ = Dispatcher.BeginInvoke(() => ApplyKenwoodMeterReply(cmd, ans));
-        }
-
-        private static string VariantToAnsiString(object? o)
-        {
-            if (o is null) return "";
-            if (o is string s) return s;
-            if (o is byte[] b) return Encoding.ASCII.GetString(b);
-            if (o is sbyte[] sb)
-            {
-                var tmp = new byte[sb.Length];
-                Buffer.BlockCopy(sb, 0, tmp, 0, tmp.Length);
-                return Encoding.ASCII.GetString(tmp);
-            }
-            if (o is char[] c) return new string(c);
-            try
-            {
-                var t = o.GetType();
-                if (t == typeof(object[]) || t.IsArray)
-                {
-                    var arr = (Array)o;
-                    var sb2 = new StringBuilder(arr.Length);
-                    foreach (var x in arr)
-                    {
-                        if (x is byte y) sb2.Append((char)y);
-                        else if (x is sbyte z) sb2.Append((char)z);
-                        else sb2.Append(Convert.ToChar(x));
-                    }
-                    return sb2.ToString();
-                }
-            }
-            catch { }
-            return o.ToString() ?? "";
-        }
-
-        private void ApplyKenwoodMeterReply(string sentCmd, string reply)
-        {
-            if (string.IsNullOrEmpty(reply)) return;
-            string r = reply.Trim();
-            if (r.Length == 0) return;
-
-            // TS-570: SM returns meter value (0..15). In TX this is RF power reading.
-            if (sentCmd.Contains("SM", StringComparison.Ordinal) && r.StartsWith("SM", StringComparison.Ordinal))
-            {
-                if (TryParseSmReply(r, out int raw) && raw >= 0)
-                {
-                    _catSmRaw = raw;
-                    int squares = SmRawToSquares(raw);
-                    double n = squares / 20.0;
-                    if (_isTx) { _catPwrN = n; _hasCatPwr = true; }
-                    else { _catSmN = n; _hasCatSm = true; }
-                }
-                return;
-            }
-
-            // Power read (PC;)
-            if (sentCmd.Contains("PC;", StringComparison.Ordinal) && r.StartsWith("PC", StringComparison.Ordinal))
-            {
-                var m = Regex.Match(r, @"^PC(\d{3});", RegexOptions.CultureInvariant);
-                if (m.Success && int.TryParse(m.Groups[1].Value, out int pc))
-                {
-                    _catPwrN = Math.Clamp(pc / 100.0, 0, 1);
-                    _hasCatPwr = true;
-                }
-                return;
-            }
-
-            if (sentCmd.Contains("RM;", StringComparison.Ordinal) && r.StartsWith("RM", StringComparison.Ordinal))
-            {
-                // TS-570 format: RMp1p2; where p1 meter switch (0..3), p2 meter value (0000..0008)
-                var m = Regex.Match(r, @"^RM([0-3])(\d{4});", RegexOptions.CultureInvariant);
-                if (m.Success && int.TryParse(m.Groups[2].Value, out int raw))
-                {
-                    double n = Math.Clamp(raw / 8.0, 0, 1);
-                    if (_rmParseAs == 1) { _catSwrN = n; _hasCatSwr = true; }
-                    else if (_rmParseAs == 2) { _catAlcN = n; _hasCatAlc = true; }
-                    _rmParseAs = 0;
-                }
-            }
-        }
-
-        private static bool TryParseSmReply(string r, out int value)
-        {
-            value = 0;
-            var m = Regex.Match(r, @"^SM(\d{4});", RegexOptions.CultureInvariant);
-            if (m.Success) return int.TryParse(m.Groups[1].Value, out value);
-            m = Regex.Match(r, @"^SM(\d{2,3});", RegexOptions.CultureInvariant);
-            if (m.Success) return int.TryParse(m.Groups[1].Value, out value);
-            m = Regex.Match(r, @"^SM(\d{1,3});", RegexOptions.CultureInvariant);
-            if (m.Success) return int.TryParse(m.Groups[1].Value, out value);
-            return false;
-        }
-
-        private void RequestNextKenwoodMeterQuery()
-        {
-            if (rigControl?.Rig1 == null || !_omniRigCustomReplyHooked) return;
-            try
-            {
-                if (!_isTx)
-                {
-                    rigControl.Rig1.SendCustomCommand("SM;", 7, ";");
-                    return;
-                }
-                // TS-570 TX sequence: SM (PWR), RM1 + RM (SWR), RM2 + RM (ALC).
-                switch (_txCatMeterSeq)
-                {
-                    case 0: rigControl.Rig1.SendCustomCommand("SM;", 7, ";"); break;
-                    case 1: rigControl.Rig1.SendCustomCommand("RM1;", 0, ""); break;
-                    case 2: _rmParseAs = 1; rigControl.Rig1.SendCustomCommand("RM;", 8, ";"); break;
-                    case 3: rigControl.Rig1.SendCustomCommand("RM2;", 0, ""); break;
-                    case 4: _rmParseAs = 2; rigControl.Rig1.SendCustomCommand("RM;", 8, ";"); break;
-                }
-                _txCatMeterSeq = (_txCatMeterSeq + 1) % 5;
-            }
-            catch (Exception ex) { Debug.WriteLine("Meter query: " + ex.Message); }
-        }
+        // Meter runtime logic removed: start from static ghosting layout in XAML.
 
         // ══════════════════════════════════════════════════════════════════════
         // HELPER: send raw CAT command through OmniRig
@@ -410,411 +249,7 @@ namespace TS570_Remote
             return false;
         }
 
-        private bool TryReadMeterNormalized(double defaultMax, out double normalized, params string[] candidatePropertyNames)
-        {
-            normalized = 0.0;
-            if (rigControl?.Rig1 == null) return false;
-
-            try
-            {
-                var rig = rigControl.Rig1;
-                var type = rig.GetType();
-                foreach (string name in candidatePropertyNames)
-                {
-                    var prop = type.GetProperty(name);
-                    if (prop == null) continue;
-                    object? raw = prop.GetValue(rig);
-                    if (raw == null) continue;
-
-                    double value = Convert.ToDouble(raw);
-                    if (double.IsNaN(value) || double.IsInfinity(value)) continue;
-                    if (value < 0) value = 0;
-
-                    // Drivers often expose 0..100, 0..255, or already normalized.
-                    if (value <= 1.0)
-                    {
-                        normalized = value;
-                    }
-                    else if (value <= 100.0)
-                    {
-                        normalized = value / 100.0;
-                    }
-                    else if (value <= 255.0)
-                    {
-                        normalized = value / 255.0;
-                    }
-                    else
-                    {
-                        normalized = value / defaultMax;
-                    }
-
-                    normalized = Math.Clamp(normalized, 0.0, 1.0);
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Read meter property failed: " + ex.Message);
-            }
-
-            return false;
-        }
-
-        private void SetMeterFill(Border? bar, double value01, double maxWidth)
-        {
-            if (bar == null) return;
-            double v = Math.Max(0.0, Math.Min(1.0, value01));
-            bar.Width = maxWidth * v;
-        }
-
-        private void SetMeterFillSteps(Border? bar, int squaresOn, int squaresTotal, double maxWidth)
-        {
-            if (bar == null || squaresTotal <= 0) return;
-            int on = Math.Clamp(squaresOn, 0, squaresTotal);
-            bar.Width = maxWidth * on / squaresTotal;
-        }
-
-        private void InitializeSharedMeterSegments()
-        {
-            // S-meter/PWR: tall narrow bars.
-            BuildArcSegments(sharedMeterCanvas, _sharedMeterSegments, SharedMeterSegmentCount, 2.8, 9.6, 0.45, 12.0, 19);
-            // SWR: rounded "square-ish" segments.
-            BuildArcSegments(swrMeterCanvas, _swrMeterSegments, AuxMeterSegmentCount, 4.1, 6.2, 2.0, MeterPad, int.MaxValue);
-            // ALC: tall bars, slightly wider than S-meter.
-            BuildArcSegments(alcMeterCanvas, _alcMeterSegments, AuxMeterSegmentCount, 3.0, 8.8, 0.7, MeterPad, int.MaxValue);
-        }
-
-        private void InitializeMeterLegends()
-        {
-            BuildSegmentLegend(
-                smeterLegendCanvas,
-                SharedMeterSegmentCount,
-                new (int Segment, string Label)[]
-                {
-                    (2, "1"), (6, "3"), (10, "5"), (14, "7"), (18, "9"),
-                    (22, "+20"), (26, "+40"), (30, "+60"), (33, "dB")
-                },
-                Color.FromRgb(0x18, 0x08, 0x00),
-                12.0,
-                true,
-                true,
-                true,
-                19,
-                0.34);
-
-            BuildSegmentLegend(
-                pwrLegendCanvas,
-                SharedMeterSegmentCount,
-                new (int Segment, string Label)[]
-                {
-                    (4, "10"),     // between S1(2) and S3(6)
-                    (10, "25"),    // below S5
-                    (20, "50"),    // between S9(18) and +20(22)
-                    (30, "100W")   // below +60 / 60dB mark
-                },
-                Color.FromRgb(0x18, 0x08, 0x00),
-                12.0,
-                true,
-                false,
-                false,
-                int.MaxValue,
-                1.0);
-
-            BuildSegmentLegend(
-                swrLegendCanvas,
-                AuxMeterSegmentCount,
-                new (int Segment, string Label)[]
-                {
-                    (1, "1"), (10, "1.5"), (16, "3"), (20, "∞")
-                },
-                Color.FromRgb(0x18, 0x08, 0x00),
-                MeterPad,
-                true,
-                true,
-                false,
-                int.MaxValue,
-                1.0);
-        }
-
-        private static void BuildSegmentLegend(
-            Canvas canvas,
-            int segmentCount,
-            (int Segment, string Label)[] labels,
-            Color color,
-            double sidePad,
-            bool followCurve,
-            bool aboveArc,
-            bool drawSeparators,
-            int largeFromSegment,
-            double smallSpan)
-        {
-            canvas.Children.Clear();
-            double left = sidePad;
-            double right = Math.Max(left + 20.0, canvas.Width - sidePad);
-            var stamp = new List<(double T, double X)>(labels.Length);
-            foreach (var (segment, label) in labels)
-            {
-                int s = Math.Clamp(segment, 1, segmentCount);
-                double t = GetSegmentArcT(s, segmentCount, largeFromSegment, smallSpan);
-                double x = left + (right - left) * t;
-                stamp.Add((t, x));
-
-                double width = Math.Max(8, label.Length * 4.2 + 2);
-                var tb = new TextBlock
-                {
-                    Text = label,
-                    Width = width,
-                    TextAlignment = TextAlignment.Center,
-                    FontFamily = new FontFamily("Consolas"),
-                    FontSize = 6.8,
-                    Foreground = new SolidColorBrush(color)
-                };
-                double minX = MeterPad;
-                double maxX = Math.Max(minX, canvas.Width - width);
-                double lx = Math.Clamp(x - width / 2.0, minX, maxX);
-                Canvas.SetLeft(tb, lx);
-                if (!followCurve)
-                {
-                    Canvas.SetTop(tb, 0);
-                }
-                else
-                {
-                    double u = 2.0 * t - 1.0;
-                    double yCurve = (1.0 - u * u); // 0..1
-                    const double textCurveAmpTop = 2.4;
-                    const double textCurveAmpBottom = 2.2;
-                    double y = aboveArc
-                        ? 2.8 - textCurveAmpTop * yCurve
-                        : 1.7 + textCurveAmpBottom * yCurve;
-                    Canvas.SetTop(tb, y);
-
-                    // Real curved look: rotate each label with the parabola tangent.
-                    double amp = aboveArc ? textCurveAmpTop : textCurveAmpBottom;
-                    double dxdt = Math.Max(1.0, right - left);
-                    double dydt = 4.0 * amp * u;
-                    double slope = dydt / dxdt;
-                    double angDeg = Math.Atan(slope) * 180.0 / Math.PI;
-                    tb.RenderTransformOrigin = new Point(0.5, 0.5);
-                    tb.RenderTransform = new RotateTransform(angDeg);
-                }
-                canvas.Children.Add(tb);
-            }
-
-            if (!drawSeparators || stamp.Count < 2)
-            {
-                return;
-            }
-
-            for (int i = 0; i < stamp.Count - 1; i++)
-            {
-                double tMid = (stamp[i].T + stamp[i + 1].T) * 0.5;
-                double xMid = (stamp[i].X + stamp[i + 1].X) * 0.5;
-                double gapSegments = Math.Abs(labels[i + 1].Segment - labels[i].Segment);
-
-                // Fine horizontal separators; longer in wider gaps (e.g. 9--20--40--60).
-                double sepWidth = gapSegments >= 4 ? 5.4 : 3.4;
-                double sepHeight = 0.75;
-                double sepOpacity = 0.9;
-
-                var sep = new Border
-                {
-                    Width = sepWidth,
-                    Height = sepHeight,
-                    CornerRadius = new CornerRadius(0.4),
-                    Background = new SolidColorBrush(color),
-                    Opacity = sepOpacity
-                };
-
-                double sepY;
-                if (!followCurve)
-                {
-                    sepY = aboveArc ? 2.1 : 4.0;
-                }
-                else
-                {
-                    double u = 2.0 * tMid - 1.0;
-                    double yCurve = (1.0 - u * u);
-                    double yBase = aboveArc
-                        ? 3.5 - 2.6 * yCurve
-                        : 4.2 + 2.2 * yCurve;
-                    sepY = yBase - sepHeight * 0.5;
-                }
-
-                Canvas.SetLeft(sep, xMid - sepWidth / 2.0);
-                Canvas.SetTop(sep, sepY);
-                canvas.Children.Add(sep);
-            }
-        }
-
-        private static double GetSegmentArcT(int segmentNumber, int count, int largeFromSegment, double smallSpan)
-        {
-            int s = Math.Clamp(segmentNumber, 1, count);
-            if (largeFromSegment > 1 && largeFromSegment <= count)
-            {
-                int smallCount = largeFromSegment - 1;
-                int largeCount = count - smallCount;
-                double span = Math.Clamp(smallSpan, 0.1, 0.9);
-                if (s < largeFromSegment)
-                {
-                    return smallCount <= 1
-                        ? 0.0
-                        : ((s - 1) / (double)(smallCount - 1)) * span;
-                }
-
-                int j = s - largeFromSegment;
-                return span + (largeCount <= 1
-                    ? 0.0
-                    : (j / (double)(largeCount - 1)) * (1.0 - span));
-            }
-
-            return count == 1 ? 0.0 : (s - 1) / (double)(count - 1);
-        }
-
-        private static void BuildArcSegments(Canvas canvas, List<Border> target, int count, double segWidth, double segHeight, double corner, double sidePad, int largeFromSegment)
-        {
-            target.Clear();
-            canvas.Children.Clear();
-
-            double w = canvas.Width;
-            double h = canvas.Height;
-            double left = sidePad;
-            double right = Math.Max(left + 20.0, w - sidePad);
-            double yBase = h - 2.4;
-            double depth = Math.Max(5.0, h * 0.62); // much more curvature
-
-            for (int i = 0; i < count; i++)
-            {
-                int segNumber = i + 1; // 1-based as seen in the radio scale.
-                bool isLarge = segNumber >= largeFromSegment;
-                double width = isLarge ? segWidth * 2.0 : segWidth;
-                double height = isLarge ? segHeight * 2.0 : segHeight;
-
-                double t = GetSegmentArcT(segNumber, count, largeFromSegment, 0.34);
-
-                double x = left + (right - left) * t;
-                double u = 2.0 * t - 1.0;
-                double yBottom = yBase - depth * (1.0 - u * u);
-                double slope = 2.0 * depth * u / ((right - left) / 2.0);
-                double angDeg = Math.Atan(slope) * 180.0 / Math.PI;
-
-                var seg = new Border
-                {
-                    Width = width,
-                    Height = height,
-                    CornerRadius = new CornerRadius(corner),
-                    Background = new SolidColorBrush(Color.FromRgb(0x5A, 0x4A, 0x20)),
-                    Opacity = MeterGhostOpacity,
-                    RenderTransformOrigin = new Point(0.5, 0.5),
-                    RenderTransform = new RotateTransform(angDeg)
-                };
-                Canvas.SetLeft(seg, x - seg.Width / 2.0);
-                Canvas.SetTop(seg, yBottom - seg.Height);
-                canvas.Children.Add(seg);
-                target.Add(seg);
-            }
-        }
-
-        private static void SetMeterSquares(List<Border> segments, int onCount, Color activeColor)
-        {
-            if (segments.Count == 0) return;
-            int on = Math.Clamp(onCount, 0, segments.Count);
-            for (int i = 0; i < segments.Count; i++)
-            {
-                bool active = i < on;
-                segments[i].Background = active
-                    ? new SolidColorBrush(activeColor)
-                    : new SolidColorBrush(Color.FromRgb(0x5A, 0x4A, 0x20));
-                segments[i].Opacity = active ? 1.0 : MeterGhostOpacity;
-            }
-        }
-
-        // TS-570 SM values are 0..15. Shared arc uses 33 squares with fixed anchors:
-        // S1=2, S3=6, S5=10, S7=14, S9=18, +20=22, +40=26, +60=30, dB end=33.
-        private static int SmRawToSquares(int smRaw)
-        {
-            int r = Math.Clamp(smRaw, 0, 15);
-            return r switch
-            {
-                0 => 0,
-                1 => 2,
-                2 => 4,
-                3 => 6,
-                4 => 8,
-                5 => 10,
-                6 => 12,
-                7 => 14,
-                8 => 16,
-                9 => 18,
-                10 => 22,
-                11 => 24,
-                12 => 26,
-                13 => 28,
-                14 => 30,
-                _ => 33
-            };
-        }
-
-        private void UpdateDisplayMeters()
-        {
-            double sm = 0, pwr = 0, swr = 0, alc = 0;
-            bool hasSm, hasPwr, hasSwr, hasAlc;
-
-            if (_hasCatSm) { hasSm = true; sm = _catSmN; }
-            else
-                hasSm = TryReadMeterNormalized(100.0, out sm, "SMeter", "Smeter", "SignalStrength", "Strength", "SLevel");
-
-            if (_hasCatPwr) { hasPwr = true; pwr = _catPwrN; }
-            else
-                hasPwr = TryReadMeterNormalized(100.0, out pwr, "Power", "TxPower", "Pwr", "PowerOut");
-
-            if (_hasCatSwr) { hasSwr = true; swr = _catSwrN; }
-            else
-                hasSwr = TryReadMeterNormalized(10.0, out swr, "SWR", "Swr");
-
-            if (_hasCatAlc) { hasAlc = true; alc = _catAlcN; }
-            else
-                hasAlc = TryReadMeterNormalized(100.0, out alc, "ALC", "Alc");
-
-            const int sharedSquares = SharedMeterSegmentCount;
-            const int auxSquares = AuxMeterSegmentCount;
-
-            if (_isTx)
-            {
-                txtSmeter.Text = hasAlc ? $"ALC {Math.Clamp((int)Math.Round(alc * 100), 0, 100):000}" : "ALC ---";
-                SetMeterSquares(_sharedMeterSegments, (int)Math.Round((hasPwr ? pwr : 0.0) * sharedSquares), Color.FromRgb(0x36, 0x24, 0x00));
-                SetMeterSquares(_swrMeterSegments, (int)Math.Round((hasSwr ? swr : 0.0) * auxSquares), Color.FromRgb(0x2D, 0x22, 0x00));
-                SetMeterSquares(_alcMeterSegments, (int)Math.Round((hasAlc ? alc : 0.0) * auxSquares), Color.FromRgb(0x8A, 0x4C, 0x00));
-            }
-            else
-            {
-                int smSquares = 0;
-                if (hasSm)
-                    smSquares = _catSmRaw >= 0 ? SmRawToSquares(_catSmRaw) : (int)Math.Round(sm * sharedSquares);
-
-                string sLabel = "S ---";
-                if (hasSm)
-                {
-                    if (smSquares <= 18)
-                    {
-                        int sUnits = (int)Math.Round(smSquares / 2.0, MidpointRounding.AwayFromZero);
-                        if (sUnits > 9) sUnits = 9;
-                        sLabel = $"S {sUnits:0}";
-                    }
-                    else
-                    {
-                        if (smSquares <= 24) sLabel = "S9+20";
-                        else if (smSquares <= 28) sLabel = "S9+40";
-                        else if (smSquares <= 32) sLabel = "S9+60";
-                        else sLabel = "dB";
-                    }
-                }
-                txtSmeter.Text = sLabel;
-
-                SetMeterSquares(_sharedMeterSegments, smSquares, Color.FromRgb(0x36, 0x24, 0x00));
-                SetMeterSquares(_swrMeterSegments, (int)Math.Round((hasSwr ? swr : 0.0) * auxSquares), Color.FromRgb(0x2D, 0x22, 0x00));
-                SetMeterSquares(_alcMeterSegments, (int)Math.Round((hasAlc ? alc : 0.0) * auxSquares), Color.FromRgb(0x8A, 0x4C, 0x00));
-            }
-        }
+        // Meter rendering/logic intentionally removed.
 
         private (int Min, int Max) GetTxPowerLimitsByMode()
         {
