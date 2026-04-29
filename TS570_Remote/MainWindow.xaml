@@ -560,19 +560,19 @@
                                 </Style>
                             </Menu.Resources>
                             <MenuItem Header="_File">
-                                <MenuItem Header="_Exit" Click="MenuArchivoSalir_Click"/>
+                                <MenuItem Header="_Exit" Click="MenuFileExit_Click"/>
                             </MenuItem>
                             <MenuItem Header="_Settings">
                                 <MenuItem x:Name="menuMonitorAcc2" Header="Monitor _ACC2 (USB)" IsCheckable="True"
                                           Checked="MenuMonitorAcc2_Checked" Unchecked="MenuMonitorAcc2_Unchecked"/>
                                 <Separator/>
-                                <MenuItem Header="_Audio (USB / ACC2)…" Click="MenuConfigAudio_Click"/>
-                                <MenuItem Header="_Display color…" Click="MenuConfigDisplayColor_Click"/>
+                                <MenuItem Header="_Audio (USB / ACC2)…" Click="MenuSettingsAudio_Click"/>
+                                <MenuItem Header="_Display color…" Click="MenuSettingsDisplayColor_Click"/>
                                 <Separator/>
-                                <MenuItem Header="_Open data folder…" Click="MenuConfigOpenDataFolder_Click"/>
+                                <MenuItem Header="_Open data folder…" Click="MenuSettingsOpenDataFolder_Click"/>
                             </MenuItem>
                             <MenuItem Header="_Help">
-                                <MenuItem Header="_About…" Click="MenuAyudaAcerca_Click"/>
+                                <MenuItem Header="_About…" Click="MenuHelpAbout_Click"/>
                             </MenuItem>
                         </Menu>
                         <Button x:Name="btnSynchronize" DockPanel.Dock="Right"
