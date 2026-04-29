@@ -1,0 +1,142 @@
+<Window x:Class="TS570_Remote.DisplayColorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Color tools"
+        Height="560" Width="680"
+        MinHeight="520" MinWidth="640"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Loaded="Window_Loaded"
+        Background="#FF111216">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#FF1A1C22" BorderBrush="#FF2F333C" BorderThickness="1" CornerRadius="4" Padding="8,6">
+            <DockPanel>
+                <TextBlock Text="COLOR TOOLS" Foreground="#FFE8ECF8" FontFamily="Consolas" FontSize="15" FontWeight="Bold"/>
+                <TextBlock DockPanel.Dock="Right" Text="TS-570 LCD" Foreground="#FF8F96A8" FontFamily="Consolas" FontSize="11"/>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,8,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#FF171A21" BorderBrush="#FF2C3139" BorderThickness="1" CornerRadius="4" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            CornerRadius="6"
+                            BorderThickness="1" BorderBrush="#FF404048"
+                            Background="#FF000000"
+                            MouseLeftButtonDown="SvPicker_MouseLeftButtonDown"
+                            MouseMove="SvPicker_MouseMove"
+                            MouseLeftButtonUp="SvPicker_MouseLeftButtonUp">
+                        <Grid x:Name="svPickerGrid" SizeChanged="SvPickerGrid_SizeChanged">
+                            <Rectangle>
+                                <Rectangle.Fill>
+                                    <SolidColorBrush x:Name="svHueBrush" Color="#FFFF0000"/>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Rectangle>
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Rectangle>
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                        <GradientStop Color="#00000000" Offset="0"/>
+                                        <GradientStop Color="#FF000000" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Ellipse x:Name="svMarker" Width="12" Height="12" Stroke="#FFFFFFFF" StrokeThickness="2" Fill="#22000000"
+                                     HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                        <TextBlock Text="Hue" Foreground="#FFE0E4F0" FontFamily="Consolas" FontSize="10"/>
+                        <Slider x:Name="sliderHue" Minimum="0" Maximum="360" ValueChanged="SliderHue_ValueChanged"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Margin="0,6,0,0" HorizontalAlignment="Center"
+                               Text="Drag the area for saturation/value. No alpha."
+                               Foreground="#FF95A0B8" FontFamily="Consolas" FontSize="10"/>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Background="#FF171A21" BorderBrush="#FF2C3139" BorderThickness="1" CornerRadius="4" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Height="44" BorderThickness="1" BorderBrush="#FF404048" CornerRadius="4">
+                        <Border.Background>
+                            <SolidColorBrush x:Name="previewBrush" Color="#FFFF9200"/>
+                        </Border.Background>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" Text="HEX" Margin="0,10,0,0" Foreground="#FFE0E4F0" FontFamily="Consolas" FontSize="10"/>
+                    <TextBox x:Name="txtHex" Grid.Row="2" Margin="0,4,0,0"
+                             FontFamily="Consolas" FontSize="12" VerticalContentAlignment="Center"
+                             Background="#FF101319" Foreground="#FFE8ECF8" BorderBrush="#FF2C3139"
+                             TextChanged="TxtHex_TextChanged"/>
+
+                    <TextBlock Grid.Row="3" Text="RGB" Margin="0,10,0,0" Foreground="#FFE0E4F0" FontFamily="Consolas" FontSize="10"/>
+                    <StackPanel Grid.Row="4" Margin="0,4,0,0">
+                        <Slider x:Name="sliderR" Minimum="0" Maximum="255" TickFrequency="1" ValueChanged="SliderRgb_ValueChanged"/>
+                        <Slider x:Name="sliderG" Minimum="0" Maximum="255" TickFrequency="1" Margin="0,6,0,0" ValueChanged="SliderRgb_ValueChanged"/>
+                        <Slider x:Name="sliderB" Minimum="0" Maximum="255" TickFrequency="1" Margin="0,6,0,0" ValueChanged="SliderRgb_ValueChanged"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="5" Text="Palettes" Margin="0,10,0,6" Foreground="#FFE0E4F0" FontFamily="Consolas" FontSize="10"/>
+                    <WrapPanel Grid.Row="6">
+                        <Button Content="Solaris" Width="88" Height="24" Margin="0,0,6,6" Tag="#FFBA00" Click="Preset_Click"/>
+                        <Button Content="Aurora" Width="88" Height="24" Margin="0,0,6,6" Tag="#7DFF54" Click="Preset_Click"/>
+                        <Button Content="Glacier" Width="88" Height="24" Margin="0,0,6,6" Tag="#C6F2FF" Click="Preset_Click"/>
+                        <Button Content="Neptune" Width="88" Height="24" Margin="0,0,6,6" Tag="#6EC8FF" Click="Preset_Click"/>
+                        <Button Content="Obsidian" Width="88" Height="24" Margin="0,0,6,6" Tag="#E6E6E0" Click="Preset_Click"/>
+                        <Button Content="Nebula" Width="88" Height="24" Margin="0,0,6,6" Tag="#C28CFF" Click="Preset_Click"/>
+                        <Button Content="Ruby Flux" Width="88" Height="24" Margin="0,0,6,6" Tag="#FF6A5A" Click="Preset_Click"/>
+                        <Button Content="Cyber Lime" Width="88" Height="24" Margin="0,0,6,6" Tag="#B9FF2A" Click="Preset_Click"/>
+                    </WrapPanel>
+
+                    <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button Content="Reset default" Width="110" Height="24" Margin="0,0,8,0" Click="BtnReset_Click"/>
+                        <Button Content="OK" Width="86" Height="24" Margin="0,0,8,0" IsDefault="True" Click="BtnOk_Click"/>
+                        <Button Content="Cancel" Width="86" Height="24" IsCancel="True" Click="BtnCancel_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="2"
+                   Text="Everything is synchronized in one panel."
+                   Foreground="#FF80889A" FontFamily="Consolas" FontSize="10"/>
+    </Grid>
+</Window>
