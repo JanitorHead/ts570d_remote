@@ -679,12 +679,12 @@ namespace TS570_Remote
             WindowsPlaybackEndpointVolume.SetMasterVolumeScalar(_settings.AudioTxPlaybackDeviceId, _state.MicGainValue / 100f);
         }
 
-        private void MenuArchivoSalir_Click(object sender, RoutedEventArgs e)
+        private void MenuFileExit_Click(object sender, RoutedEventArgs e)
         {
             Close();
         }
 
-        private void MenuConfigAudio_Click(object sender, RoutedEventArgs e)
+        private void MenuSettingsAudio_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new AudioSettingsWindow(_settings) { Owner = this };
             if (dlg.ShowDialog() != true)
@@ -695,7 +695,7 @@ namespace TS570_Remote
                 TryStartAcc2Monitor();
         }
 
-        private void MenuConfigDisplayColor_Click(object sender, RoutedEventArgs e)
+        private void MenuSettingsDisplayColor_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new DisplayColorWindow(_displayBaseColor) { Owner = this };
             if (dlg.ShowDialog() != true)
@@ -708,14 +708,14 @@ namespace TS570_Remote
             txtStatusRight.Text = $"  Display color saved {_settings.DisplayColorHex}";
         }
 
-        private void MenuConfigOpenDataFolder_Click(object sender, RoutedEventArgs e)
+        private void MenuSettingsOpenDataFolder_Click(object sender, RoutedEventArgs e)
         {
             string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TS570_Remote");
             Directory.CreateDirectory(dir);
             Process.Start(new ProcessStartInfo { FileName = dir, UseShellExecute = true });
         }
 
-        private void MenuAyudaAcerca_Click(object sender, RoutedEventArgs e)
+        private void MenuHelpAbout_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(
                 this,
