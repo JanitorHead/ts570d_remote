@@ -14,6 +14,9 @@ public sealed class AppSettings
     /// <summary>WASAPI capture from ACC2→PC (audio from the radio; not CAT/OmniRig).</summary>
     public string? AudioCaptureDeviceId { get; set; }
 
+    /// <summary>LCD display base color in #RRGGBB format.</summary>
+    public string? DisplayColorHex { get; set; }
+
     private static string FilePath =>
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -1,7 +1,9 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,8 +22,92 @@ namespace TS570_Remote
         private readonly RadioState _state = new();
         private readonly Ts570LocalCore _core;
         private readonly AppSettings _settings = AppSettings.Load();
+        private Color _displayBaseColor = Color.FromRgb(255, 146, 0);
         private Acc2AudioBridge? _acc2Bridge;
         private int _tuneStepIndex = 0;
+
+        private OmniRigCatClient? _cat;
+        private readonly DispatcherTimer _catSyncTimer;
+        private bool _catReady;
+        private bool _catRigOnline;
+        private int _catPollDivider;
+        private int _catControlSyncDivider;
+        private bool _catBootstrapDone;
+        private int _catBootstrapTicks;
+        private int _catBootstrapReadIndex;
+        private int _txMeterPollPhase;
+        private double _txPwrRatio;
+        private double _txMidRatio;
+        private double _txAlcRatio;
+        private string _lastMeterDebugText = "SM: n/a";
+        private readonly bool _meterDebugEnabled = false;
+
+        private System.Windows.Shapes.Rectangle[]? _sharedMeterSegments;
+        private System.Windows.Shapes.Rectangle[]? _swrMeterSegments;
+        private System.Windows.Shapes.Rectangle[]? _alcMeterSegments;
+        private System.Windows.Shapes.Rectangle[]? _smeterTickMarkers;
+
+        // Last values sent to the radio (for throttling).
+        private int _lastVfoAHz = int.MinValue;
+        private int _lastVfoBHz = int.MinValue;
+        private RadioMode _lastMode = (RadioMode)(-1);
+        // Set to true so the first CAT tick pushes initial RX/flags to match UI state.
+        private bool _lastIsTx = true;
+        private bool _lastSplitOn = true;
+        private bool _lastActiveVfo = true;
+        private bool _lastAttOn = true;
+        private bool _lastPreAmpOn = true;
+        private bool _lastVoxOn = true;
+        private bool _lastProcOn = true;
+        private int _lastNrState = -1;
+        private bool _lastBcOn = true;
+        private bool _lastNbOn = true;
+        private bool _lastFineOn = true;
+        private int _lastAntSel = -1;
+        private int _lastAfValue = -1;
+        private int _lastRfValue = -1;
+        private int _lastSqlValue = -1;
+        private int _lastIfShiftValue = -1;
+        private int _lastDspHighValue = -1;
+        private int _lastDspLowValue = -1;
+        private bool _lastRitOn = true;
+        private bool _lastXitOn = true;
+        private int _lastRitOffsetCentiKhz = int.MinValue;
+
+        private int _lastTxMicValue = -1;
+        private int _lastTxKeyValue = -1;
+        private int _lastTxDelayValue = -1;
+        private int _lastTxPwrValue = -1;
+        private bool _lastAtTuneOn = true;
+
+        // OmniRig enum constants (from OmniRig type library).
+        private const int StOnline = 4;
+        private const int PmSplitOn = 0x00008000;
+        private const int PmSplitOff = 0x00010000;
+        private const int PmRitOn = 0x00020000;
+        private const int PmRitOff = 0x00040000;
+        private const int PmXitOn = 0x00080000;
+        private const int PmXitOff = 0x00100000;
+        private const int PmRx = 0x00200000;
+        private const int PmTx = 0x00400000;
+        private const int PmCwU = 0x00800000;
+        private const int PmCwL = 0x01000000;
+        private const int PmSsbU = 0x02000000;
+        private const int PmSsbL = 0x04000000;
+        private const int PmDigU = 0x08000000;
+        private const int PmDigL = 0x10000000;
+        private const int PmAm = 0x20000000;
+        private const int PmFm = 0x40000000;
+        private const int PmVfoAA = 0x00000080;
+        private const int PmVfoAB = 0x00000100;
+        private const int PmVfoBA = 0x00000200;
+        private const int PmVfoBB = 0x00000400;
+        private const int PmVfoA = 0x00000800;
+        private const int PmVfoB = 0x00001000;
+        private const int MeterPwr = 0;
+        private const int MeterSwr = 1;
+        private const int MeterAlc = 2;
+        private const int MeterComp = 3;
 
         private double _afRfOuterAngle;
         private double _afRfInnerAngle;
@@ -63,13 +149,20 @@ namespace TS570_Remote
             _core = new Ts570LocalCore(_state);
             _scanTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
             _scanTimer.Tick += ScanTimer_Tick;
+            _catSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _catSyncTimer.Tick += CatSyncTimer_Tick;
 
             if (DesignerProperties.GetIsInDesignMode(this))
                 return;
 
+            _displayBaseColor = ParseDisplayColor(_settings.DisplayColorHex);
+            ApplyDisplayColorTheme(_displayBaseColor);
+
             ledCatGreen.Visibility = Visibility.Hidden;
             ledCatAmber.Visibility = Visibility.Visible;
             txtStatusLeft.Text = "Local: simulated panel · CAT/OmniRig pending · audio via USB/ACC2";
+
+            TryInitCat();
 
             if (!string.IsNullOrEmpty(_settings.AudioTxPlaybackDeviceId)
                 && WindowsPlaybackEndpointVolume.TryGetMasterVolumeScalar(_settings.AudioTxPlaybackDeviceId, out float micScalar))
@@ -77,14 +170,449 @@ namespace TS570_Remote
                 _state.MicGainValue = (int)Math.Clamp(Math.Round(micScalar * 100.0), 0, 100);
             }
 
+            // Requested startup defaults only when CAT is not available.
+            // With CAT online, we first read rig state and then reflect it.
+            if (!_catReady)
+            {
+                _state.AfValue = 0;
+                _state.RfValue = 100;
+            }
+
             ApplyUiFromState();
             txtStatusRight.Text = "  TS-570 local core ready";
 
             meterPhonesTrack.SizeChanged += (_, _) => UpdateGainMeters();
             meterMicTrack.SizeChanged += (_, _) => UpdateGainMeters();
-            ContentRendered += (_, _) => UpdateGainMeters();
+            ContentRendered += (_, _) =>
+            {
+                UpdateGainMeters();
+                EnsureMeterSegmentsInitialized();
+                ClearRadioMeterBars();
+            };
 
             Closing += (_, _) => _acc2Bridge?.Dispose();
+        }
+
+        private void TryInitCat()
+        {
+            try
+            {
+                Debug.WriteLine($"[CAT] Process Is64BitProcess={Environment.Is64BitProcess}");
+                _cat = new OmniRigCatClient(rigNumber: 1);
+                _catReady = true;
+                _catRigOnline = false;
+                _catBootstrapDone = false;
+                _catBootstrapTicks = 0;
+                _catBootstrapReadIndex = 0;
+                _catSyncTimer.Start();
+                ledCatGreen.Visibility = Visibility.Visible;
+                ledCatAmber.Visibility = Visibility.Hidden;
+                txtStatusLeft.Text = "Local: simulated panel · CAT/OmniRig connected · audio via USB/ACC2";
+            }
+            catch (Exception ex)
+            {
+                _catReady = false;
+                _catRigOnline = false;
+                _cat?.Dispose();
+                _cat = null;
+                ledCatGreen.Visibility = Visibility.Hidden;
+                ledCatAmber.Visibility = Visibility.Visible;
+                txtStatusLeft.Text = "Local: simulated panel · CAT/OmniRig error (see debug log) · audio via USB/ACC2";
+                Debug.WriteLine($"OmniRig init failed: {ex.Message}");
+            }
+        }
+
+        private void CatSyncTimer_Tick(object? sender, EventArgs e)
+        {
+            if (!_catReady || _cat is null)
+                return;
+
+            // Bootstrap: read rig values first, avoid writing defaults to radio.
+            if (!_catBootstrapDone)
+            {
+                _catBootstrapTicks++;
+                if (_cat.TryReadSnapshot(out var bootSnapshot))
+                    ApplyRigSnapshot(bootSnapshot);
+                BootstrapReadFromRig();
+
+                // ~1.5s warm-up at 50 ms ticks.
+                if (_catBootstrapTicks >= 30)
+                {
+                    _catBootstrapDone = true;
+                    PrimeLastSentStateFromCurrent();
+                    ApplyUiFromState();
+                }
+                return;
+            }
+
+            // Meter-first strategy:
+            // - update meter bars on every fast tick (50 ms)
+            // - run heavier control sync in background cadence
+            UpdateRadioMetersFromCat();
+
+            // Poll transceiver state less frequently to reduce CAT queue pressure.
+            _catPollDivider = (_catPollDivider + 1) % 10;
+            if (_catPollDivider == 0 && _cat.TryReadSnapshot(out var snapshot))
+                ApplyRigSnapshot(snapshot);
+
+            // Control sync cadence: 1 out of 4 ticks (~200 ms).
+            _catControlSyncDivider = (_catControlSyncDivider + 1) % 4;
+            if (_catControlSyncDivider != 0)
+            {
+                // Keep right display override stable while a TX param editor is active.
+                if (_activeTxParam != TxParam.None)
+                    UpdateRitDisplay();
+                return;
+            }
+
+            // Frequency and mode: these are always safe to keep aligned.
+            if (_state.VfoAHz != _lastVfoAHz)
+            {
+                _cat.SendCustomCommand($"FA{Format11Digits(_state.VfoAHz)};");
+                _lastVfoAHz = _state.VfoAHz;
+            }
+            if (_state.VfoBHz != _lastVfoBHz)
+            {
+                _cat.SendCustomCommand($"FB{Format11Digits(_state.VfoBHz)};");
+                _lastVfoBHz = _state.VfoBHz;
+            }
+            if (_state.Mode != _lastMode)
+            {
+                _cat.SendCustomCommand(GetModeCommand(_state.Mode));
+                _lastMode = _state.Mode;
+            }
+
+            // Receiver / transmitter VFO selection (split handling).
+            bool rxVfo = _state.ActiveVfo == 0; // A=0
+            int rx = rxVfo ? 0 : 1;
+            int tx = _state.SplitOn ? 1 - rx : rx;
+
+            if (_state.SplitOn != _lastSplitOn || _state.ActiveVfo != (_lastActiveVfo ? 1 : 0))
+            {
+                _cat.SendCustomCommand($"FR{rx};FT{tx};");
+                _lastSplitOn = _state.SplitOn;
+                _lastActiveVfo = _state.ActiveVfo == 1;
+            }
+
+            // TX/RX.
+            if (_state.IsTx != _lastIsTx)
+            {
+                _cat.SendCustomCommand(_state.IsTx ? "TX;" : "RX;");
+                _lastIsTx = _state.IsTx;
+            }
+
+            // Basic receiver toggles.
+            if (_state.AttOn != _lastAttOn)
+            {
+                _cat.SendCustomCommand(_state.AttOn ? "RA01;" : "RA00;");
+                _lastAttOn = _state.AttOn;
+            }
+            if (_state.PreAmpOn != _lastPreAmpOn)
+            {
+                _cat.SendCustomCommand(_state.PreAmpOn ? "PA1;" : "PA0;");
+                _lastPreAmpOn = _state.PreAmpOn;
+            }
+            if (_state.VoxOn != _lastVoxOn)
+            {
+                _cat.SendCustomCommand(_state.VoxOn ? "VX1;" : "VX0;");
+                _lastVoxOn = _state.VoxOn;
+            }
+            if (_state.ProcOn != _lastProcOn)
+            {
+                _cat.SendCustomCommand(_state.ProcOn ? "PR1;" : "PR0;");
+                _lastProcOn = _state.ProcOn;
+            }
+            if (_state.AtTuneOn != _lastAtTuneOn)
+            {
+                // CatCommandMap uses AC011/AC000.
+                _cat.SendCustomCommand(_state.AtTuneOn ? "AC011;" : "AC000;");
+                _lastAtTuneOn = _state.AtTuneOn;
+            }
+
+            // DSP-ish toggles we can map with existing codes.
+            if (_state.NrState != _lastNrState)
+            {
+                _cat.SendCustomCommand($"NR{_state.NrState};");
+                _lastNrState = _state.NrState;
+            }
+            if (_state.BcOn != _lastBcOn)
+            {
+                _cat.SendCustomCommand(_state.BcOn ? "BC1;" : "BC0;");
+                _lastBcOn = _state.BcOn;
+            }
+            if (_state.NbOn != _lastNbOn)
+            {
+                _cat.SendCustomCommand(_state.NbOn ? "NB1;" : "NB0;");
+                _lastNbOn = _state.NbOn;
+            }
+            if (_state.FineOn != _lastFineOn)
+            {
+                _cat.SendCustomCommand(_state.FineOn ? "FS1;" : "FS0;");
+                _lastFineOn = _state.FineOn;
+            }
+            if (_state.AntSel != _lastAntSel)
+            {
+                _cat.SendCustomCommand(_state.AntSel == 2 ? "AN2;" : "AN1;");
+                _lastAntSel = _state.AntSel;
+            }
+
+            if (_state.RitOn != _lastRitOn)
+            {
+                _cat.SendCustomCommand(_state.RitOn ? "RT1;" : "RT0;");
+                _lastRitOn = _state.RitOn;
+            }
+            if (_state.XitOn != _lastXitOn)
+            {
+                _cat.SendCustomCommand(_state.XitOn ? "XT1;" : "XT0;");
+                _lastXitOn = _state.XitOn;
+            }
+
+            if (_state.RitOffsetCentiKhz != _lastRitOffsetCentiKhz)
+            {
+                // RC resets offset to 0; apply RU/RD delta in 10 Hz steps.
+                int oldOffset = _lastRitOffsetCentiKhz == int.MinValue ? 0 : _lastRitOffsetCentiKhz;
+                int delta = _state.RitOffsetCentiKhz - oldOffset;
+
+                if (oldOffset == 0)
+                {
+                    // no-op: direct relative movement from zero below
+                }
+                else if (Math.Abs(delta) > 120)
+                {
+                    // Large jumps are cheaper with clear+relative.
+                    _cat.SendCustomCommand("RC;");
+                    delta = _state.RitOffsetCentiKhz;
+                }
+
+                int maxStepPerTick = 24;
+                int steps = Math.Clamp(Math.Abs(delta), 0, maxStepPerTick);
+                string cmd = delta >= 0 ? "RU;" : "RD;";
+                for (int i = 0; i < steps; i++)
+                    _cat.SendCustomCommand(cmd);
+
+                _lastRitOffsetCentiKhz = oldOffset + (delta >= 0 ? steps : -steps);
+            }
+
+            if (_state.AfValue != _lastAfValue)
+            {
+                _cat.SendCustomCommand($"AG{Scale0To255(_state.AfValue):000};");
+                _lastAfValue = _state.AfValue;
+            }
+            if (_state.RfValue != _lastRfValue)
+            {
+                _cat.SendCustomCommand($"RG{Scale0To255(_state.RfValue):000};");
+                _lastRfValue = _state.RfValue;
+            }
+            if (_state.SqlValue != _lastSqlValue)
+            {
+                _cat.SendCustomCommand($"SQ{Scale0To255(_state.SqlValue):000};");
+                _lastSqlValue = _state.SqlValue;
+            }
+            if (_state.IfShiftValue != _lastIfShiftValue)
+            {
+                _cat.SendCustomCommand($"IS{ScaleIfShiftSigned4(_state.IfShiftValue)};");
+                _lastIfShiftValue = _state.IfShiftValue;
+            }
+            if (_state.DspHighValue != _lastDspHighValue)
+            {
+                _cat.SendCustomCommand($"SH{Scale0To20(_state.DspHighValue):00};");
+                _lastDspHighValue = _state.DspHighValue;
+            }
+            if (_state.DspLowValue != _lastDspLowValue)
+            {
+                _cat.SendCustomCommand($"SL{Scale0To20(_state.DspLowValue):00};");
+                _lastDspLowValue = _state.DspLowValue;
+            }
+
+            // TX parameter path from MIC/PWR/KEY/DELAY selector + MULTI/CH.
+            if (_state.TxMicValue != _lastTxMicValue)
+            {
+                _cat.SendCustomCommand($"MG{Scale0To255(_state.TxMicValue):000};");
+                _lastTxMicValue = _state.TxMicValue;
+            }
+            if (_state.TxKeyValue != _lastTxKeyValue)
+            {
+                // KS: keying speed, roughly 004..060 WPM.
+                _cat.SendCustomCommand($"KS{Scale0ToRange(_state.TxKeyValue, 4, 60):000};");
+                _lastTxKeyValue = _state.TxKeyValue;
+            }
+            if (_state.TxDelayValue != _lastTxDelayValue)
+            {
+                // SD: 0..1000 ms, 50 ms steps.
+                int ms = Scale0ToRange(_state.TxDelayValue, 0, 1000);
+                ms = (int)Math.Round(ms / 50.0) * 50;
+                _cat.SendCustomCommand($"SD{Math.Clamp(ms, 0, 1000):0000};");
+                _lastTxDelayValue = _state.TxDelayValue;
+            }
+
+            // PWR knob.
+            if (_state.TxPwrValue != _lastTxPwrValue)
+            {
+                // PC command expects 3 digits in examples (PC100;).
+                int pwr = Math.Clamp(_state.TxPwrValue, 0, 999);
+                _cat.SendCustomCommand($"PC{pwr:000};");
+                _lastTxPwrValue = _state.TxPwrValue;
+            }
+        }
+
+        private static string Format11Digits(int value)
+        {
+            // CAT expects 11 digits for FA/FB (e.g., 14,250,000 => 00014250000).
+            return Math.Max(0, value).ToString("00000000000");
+        }
+
+        private static int Scale0To255(int value0to100)
+            => Scale0ToRange(value0to100, 0, 255);
+
+        private static int Scale0To20(int value0to100)
+            => Scale0ToRange(value0to100, 0, 20);
+
+        private static int Scale0ToRange(int value0to100, int min, int max)
+        {
+            int v = Math.Clamp(value0to100, 0, 100);
+            return (int)Math.Round(min + ((max - min) * (v / 100.0)));
+        }
+
+        private static string ScaleIfShiftSigned4(int value0to100)
+        {
+            // Map center(50)=>0, range to about +/-1000 (IS-0300 style signed 4 digits).
+            int v = Math.Clamp(value0to100, 0, 100);
+            int signed = (int)Math.Round((v - 50) * 20.0);
+            signed = Math.Clamp(signed, -9999, 9999);
+            return $"{(signed >= 0 ? "+" : "-")}{Math.Abs(signed):0000}";
+        }
+
+        private static string GetModeCommand(RadioMode mode)
+        {
+            // Values taken from the generic Kenwood.ini you provided:
+            // pmSSB_L => MD1, pmSSB_U => MD2, pmCW_U => MD3, pmFM => MD4, pmAM => MD5
+            // pmCW_L => MD7, pmDIG_U => MD9, pmDIG_L => MD6.
+            return mode switch
+            {
+                RadioMode.Lsb => "MD1;",
+                RadioMode.Usb => "MD2;",
+                RadioMode.Cw => "MD3;",
+                RadioMode.Fsk => "MD9;",
+                RadioMode.Fm => "MD4;",
+                RadioMode.Am => "MD5;",
+                _ => "MD2;"
+            };
+        }
+
+        private static RadioMode GetReverseMode(RadioMode mode)
+        {
+            return mode switch
+            {
+                RadioMode.Usb => RadioMode.Lsb,
+                RadioMode.Lsb => RadioMode.Usb,
+                RadioMode.Cw => RadioMode.Cw,
+                RadioMode.Fsk => RadioMode.Fsk,
+                _ => mode
+            };
+        }
+
+        private void ApplyRigSnapshot(OmniRigCatClient.RigSnapshot s)
+        {
+            _catRigOnline = s.Status == StOnline;
+            if (_catRigOnline)
+            {
+                ledCatGreen.Visibility = Visibility.Visible;
+                ledCatAmber.Visibility = Visibility.Hidden;
+            }
+            else
+            {
+                ledCatGreen.Visibility = Visibility.Hidden;
+                ledCatAmber.Visibility = Visibility.Visible;
+            }
+
+            bool changed = false;
+
+            if (s.FreqA > 0 && _state.VfoAHz != s.FreqA)
+            {
+                _state.VfoAHz = s.FreqA;
+                changed = true;
+            }
+            if (s.FreqB > 0 && _state.VfoBHz != s.FreqB)
+            {
+                _state.VfoBHz = s.FreqB;
+                changed = true;
+            }
+
+            RadioMode mode = s.Mode switch
+            {
+                PmSsbL => RadioMode.Lsb,
+                PmSsbU => RadioMode.Usb,
+                PmCwU or PmCwL => RadioMode.Cw,
+                PmDigU or PmDigL => RadioMode.Fsk,
+                PmFm => RadioMode.Fm,
+                PmAm => RadioMode.Am,
+                _ => _state.Mode
+            };
+            if (_state.Mode != mode)
+            {
+                _state.Mode = mode;
+                changed = true;
+            }
+
+            int activeVfo = s.Vfo switch
+            {
+                PmVfoAA or PmVfoAB or PmVfoA => 0,
+                PmVfoBA or PmVfoBB or PmVfoB => 1,
+                _ => _state.ActiveVfo
+            };
+            if (_state.ActiveVfo != activeVfo)
+            {
+                _state.ActiveVfo = activeVfo;
+                changed = true;
+            }
+
+            bool splitOn = s.Split switch
+            {
+                PmSplitOn => true,
+                PmSplitOff => false,
+                _ => (s.Vfo == PmVfoAB || s.Vfo == PmVfoBA)
+            };
+            if (_state.SplitOn != splitOn)
+            {
+                _state.SplitOn = splitOn;
+                changed = true;
+            }
+
+            bool ritOn = s.Rit == PmRitOn;
+            bool xitOn = s.Xit == PmXitOn;
+            bool isTx = s.Tx == PmTx;
+
+            if (_state.RitOn != ritOn) { _state.RitOn = ritOn; changed = true; }
+            if (_state.XitOn != xitOn) { _state.XitOn = xitOn; changed = true; }
+            if (_state.IsTx != isTx) { _state.IsTx = isTx; changed = true; }
+
+            int centi = Math.Clamp((int)Math.Round(s.RitOffset / 10.0), -999, 999);
+            if (_state.RitOffsetCentiKhz != centi)
+            {
+                _state.RitOffsetCentiKhz = centi;
+                changed = true;
+            }
+
+            if (!changed)
+                return;
+
+            txtMode.Text = GetModeName(_state.Mode);
+            UpdateModeButtonStyles(_state.Mode);
+            UpdateFrequencyReadout();
+            UpdateLcdBadges();
+            UpdateRitDisplay();
+            UpdateAuxDisplay();
+
+            // Prevent immediate write-back churn on mirrored fields.
+            _lastVfoAHz = _state.VfoAHz;
+            _lastVfoBHz = _state.VfoBHz;
+            _lastMode = _state.Mode;
+            _lastSplitOn = _state.SplitOn;
+            _lastActiveVfo = _state.ActiveVfo == 1;
+            _lastRitOn = _state.RitOn;
+            _lastXitOn = _state.XitOn;
+            _lastIsTx = _state.IsTx;
+            _lastRitOffsetCentiKhz = _state.RitOffsetCentiKhz;
         }
 
         private void MenuMonitorAcc2_Checked(object sender, RoutedEventArgs e)
@@ -167,6 +695,19 @@ namespace TS570_Remote
                 TryStartAcc2Monitor();
         }
 
+        private void MenuConfigDisplayColor_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new DisplayColorWindow(_displayBaseColor) { Owner = this };
+            if (dlg.ShowDialog() != true)
+                return;
+
+            _displayBaseColor = dlg.SelectedColor;
+            ApplyDisplayColorTheme(_displayBaseColor);
+            _settings.DisplayColorHex = $"#{_displayBaseColor.R:X2}{_displayBaseColor.G:X2}{_displayBaseColor.B:X2}";
+            _settings.Save();
+            txtStatusRight.Text = $"  Display color saved {_settings.DisplayColorHex}";
+        }
+
         private void MenuConfigOpenDataFolder_Click(object sender, RoutedEventArgs e)
         {
             string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TS570_Remote");
@@ -184,6 +725,45 @@ namespace TS570_Remote
                 "About TS570 Remote",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+        }
+
+        private static Color ParseDisplayColor(string? hex)
+        {
+            if (string.IsNullOrWhiteSpace(hex))
+                return Color.FromRgb(255, 146, 0);
+
+            string value = hex.Trim();
+            if (value.StartsWith("#"))
+                value = value[1..];
+            if (value.Length != 6)
+                return Color.FromRgb(255, 146, 0);
+
+            bool okR = byte.TryParse(value[0..2], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte r);
+            bool okG = byte.TryParse(value[2..4], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte g);
+            bool okB = byte.TryParse(value[4..6], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte b);
+            return okR && okG && okB ? Color.FromRgb(r, g, b) : Color.FromRgb(255, 146, 0);
+        }
+
+        private void ApplyDisplayColorTheme(Color baseColor)
+        {
+            gsLcdFillHigh.Color = Blend(baseColor, Colors.White, 0.22);
+            gsLcdFillLow.Color = Blend(baseColor, Colors.White, 0.22);
+            gsLcdFillTop.Color = Blend(baseColor, Colors.Black, 0.26);
+            gsLcdFillBottom.Color = Blend(baseColor, Colors.Black, 0.26);
+            gsLcdBezelTop.Color = Blend(baseColor, Colors.Black, 0.86);
+            gsLcdBezelBottom.Color = Blend(baseColor, Colors.Black, 0.95);
+            fxLcdGlow.Color = Blend(baseColor, Colors.Black, 0.16);
+            Resources["LcdThemeOnBrush"] = new SolidColorBrush(Blend(baseColor, Colors.White, 0.10));
+        }
+
+        private static Color Blend(Color from, Color to, double toWeight)
+        {
+            toWeight = Math.Clamp(toWeight, 0.0, 1.0);
+            double fromWeight = 1.0 - toWeight;
+            byte r = (byte)Math.Round((from.R * fromWeight) + (to.R * toWeight));
+            byte g = (byte)Math.Round((from.G * fromWeight) + (to.G * toWeight));
+            byte b = (byte)Math.Round((from.B * fromWeight) + (to.B * toWeight));
+            return Color.FromRgb(r, g, b);
         }
 
         private void UpdateGainMeters()
@@ -230,6 +810,11 @@ namespace TS570_Remote
             SetActive(btnFilter, _isFilterAdjustMode);
             UpdateGainMeters();
             UpdatePhonesMicKnobsVisual();
+            _afRfOuterAngle = KnobAngleFromValue(_state.RfValue);
+            _afRfInnerAngle = KnobAngleFromValue(_state.AfValue);
+            rtAfRfOuter.Angle = _afRfOuterAngle;
+            rtAfRfInner.Angle = _afRfInnerAngle;
+            UpdateMeterLegendVisibility();
             SyncPhonesMonitorGain();
             SyncMicWindowsEndpointVolume();
         }
@@ -240,8 +825,343 @@ namespace TS570_Remote
             rtMicGain.Angle = (_state.MicGainValue - 50) * 2.4;
         }
 
+        private static double KnobAngleFromValue(int value0to100)
+            => (Math.Clamp(value0to100, 0, 100) - 50) * 2.4;
+
+        private void UpdateMeterLegendVisibility()
+        {
+            // Keep fixed geometry: never collapse/move legend rows.
+            // We only switch intensity (ghost vs lit), like an old LCD layer.
+            const double ghost = 20.0 / 255.0;
+            const double lit = 1.0;
+
+            SetOpacityRecursive(smeterLegendCanvas, lit);
+            txtSmeterLegendS.Opacity = lit;
+            SetOpacityRecursive(pwrLegendCanvas, lit);
+            txtAlcLegend.Opacity = lit;
+            alcLegendLine.Opacity = lit;
+
+            SetOpacityRecursive(swrLegendGrid, _state.ProcOn ? ghost : lit);
+            SetOpacityRecursive(compLegendGrid, _state.ProcOn ? lit : ghost);
+        }
+
+        private void EnsureMeterSegmentsInitialized()
+        {
+            _sharedMeterSegments ??= sharedMeterCanvas.Children
+                .OfType<System.Windows.Shapes.Rectangle>()
+                .Where(r => r.Height >= 6)
+                .OrderBy(Canvas.GetLeft)
+                .ToArray();
+
+            _swrMeterSegments ??= swrMeterCanvas.Children
+                .OfType<System.Windows.Shapes.Rectangle>()
+                .Where(r => r.Height >= 6)
+                .OrderBy(Canvas.GetLeft)
+                .ToArray();
+
+            _alcMeterSegments ??= alcMeterCanvas.Children
+                .OfType<System.Windows.Shapes.Rectangle>()
+                .Where(r => r.Height >= 6)
+                .OrderBy(Canvas.GetLeft)
+                .ToArray();
+
+            _smeterTickMarkers ??=
+            [
+                smeterMarkS1,
+                smeterMarkS3,
+                smeterMarkS5,
+                smeterMarkS7,
+                smeterMarkS9
+            ];
+        }
+
+        private void ClearRadioMeterBars()
+        {
+            EnsureMeterSegmentsInitialized();
+            SetSegmentFill(_sharedMeterSegments, 0.0);
+            SetSegmentFill(_swrMeterSegments, 0.0);
+            SetSegmentFill(_alcMeterSegments, 0.0);
+        }
+
+        private void UpdateRadioMetersFromCat()
+        {
+            if (!_catReady || _cat is null)
+            {
+                ClearRadioMeterBars();
+                ShowMeterDebug("SM: CAT not ready");
+                return;
+            }
+
+            EnsureMeterSegmentsInitialized();
+
+            if (_state.IsTx)
+            {
+                // Prioritize SWR/COMP responsiveness; refresh PWR/ALC less frequently.
+                int midMeter = _state.ProcOn ? MeterComp : MeterSwr;
+                if (TryReadMeterValue(midMeter, out int mid))
+                    _txMidRatio = _state.ProcOn ? (mid / 30.0) : MapSwrRawToRatio(mid);
+
+                // Stagger lower-priority reads to reduce command queue pressure.
+                switch (_txMeterPollPhase % 6)
+                {
+                    case 0:
+                    case 3:
+                        if (TryReadMeterValue(MeterPwr, out int pwr))
+                            _txPwrRatio = pwr / 30.0;
+                        break;
+                    case 1:
+                    case 4:
+                        if (TryReadMeterValue(MeterAlc, out int alc))
+                            _txAlcRatio = alc / 30.0;
+                        break;
+                }
+                _txMeterPollPhase = (_txMeterPollPhase + 1) % 6;
+
+                SetSharedMeterFill(_txPwrRatio);
+                SetSegmentFill(_swrMeterSegments, _txMidRatio);
+                SetSegmentFill(_alcMeterSegments, _txAlcRatio);
+            }
+            else
+            {
+                // RX: S-meter on top bar only.
+                if (TryReadSmeterRaw(out int s))
+                {
+                    SetSharedMeterFill(MapSmeterRawToRatio(s));
+                    ShowMeterDebug($"SM RX: {s:00}/30 ({_lastMeterDebugText})");
+                }
+                else
+                {
+                    ShowMeterDebug($"SM RX: read fail ({_lastMeterDebugText})");
+                }
+                SetSegmentFill(_swrMeterSegments, 0.0);
+                SetSegmentFill(_alcMeterSegments, 0.0);
+            }
+        }
+
+        private void BootstrapReadFromRig()
+        {
+            if (_cat is null)
+                return;
+
+            // One command per tick to keep CAT queue responsive.
+            string[] cmds =
+            {
+                "PC;", "AG;", "RG;", "SQ;", "RA;", "PA;", "VX;", "PR;",
+                "NR;", "BC;", "NB;", "FS;", "AN;", "MG;", "KS;", "SD;"
+            };
+            string cmd = cmds[_catBootstrapReadIndex % cmds.Length];
+            _catBootstrapReadIndex++;
+
+            if (!_cat.TryReadCustomCommand(cmd, 16, ";", out string reply) || string.IsNullOrWhiteSpace(reply))
+                return;
+
+            if (TryReadCmdInt(reply, "PC", out int pc)) _state.TxPwrValue = Math.Clamp(pc, 0, 100);
+            if (TryReadCmdInt(reply, "AG", out int ag)) _state.AfValue = Scale0ToRange(ag * 100 / 255, 0, 100);
+            if (TryReadCmdInt(reply, "RG", out int rg)) _state.RfValue = Scale0ToRange(rg * 100 / 255, 0, 100);
+            if (TryReadCmdInt(reply, "SQ", out int sq)) _state.SqlValue = Scale0ToRange(sq * 100 / 255, 0, 100);
+            if (TryReadCmdInt(reply, "RA", out int ra)) _state.AttOn = ra != 0;
+            if (TryReadCmdInt(reply, "PA", out int pa)) _state.PreAmpOn = pa != 0;
+            if (TryReadCmdInt(reply, "VX", out int vx)) _state.VoxOn = vx != 0;
+            if (TryReadCmdInt(reply, "PR", out int pr)) _state.ProcOn = pr != 0;
+            if (TryReadCmdInt(reply, "NR", out int nr)) _state.NrState = Math.Clamp(nr, 0, 2);
+            if (TryReadCmdInt(reply, "BC", out int bc)) _state.BcOn = bc != 0;
+            if (TryReadCmdInt(reply, "NB", out int nb)) _state.NbOn = nb != 0;
+            if (TryReadCmdInt(reply, "FS", out int fs)) _state.FineOn = fs != 0;
+            if (TryReadCmdInt(reply, "AN", out int an)) _state.AntSel = an == 2 ? 2 : 1;
+            if (TryReadCmdInt(reply, "MG", out int mg)) _state.TxMicValue = Scale0ToRange(mg * 100 / 255, 0, 100);
+            if (TryReadCmdInt(reply, "KS", out int ks)) _state.TxKeyValue = Scale0ToRange((ks - 4) * 100 / 56, 0, 100);
+            if (TryReadCmdInt(reply, "SD", out int sd)) _state.TxDelayValue = Scale0ToRange(sd / 10, 0, 100);
+        }
+
+        private static bool TryReadCmdInt(string reply, string prefix, out int value)
+        {
+            value = 0;
+            if (string.IsNullOrWhiteSpace(reply) || string.IsNullOrWhiteSpace(prefix))
+                return false;
+
+            if (!reply.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            int i = prefix.Length;
+            while (i < reply.Length && char.IsDigit(reply[i]))
+                i++;
+            if (i <= prefix.Length)
+                return false;
+
+            return int.TryParse(reply.Substring(prefix.Length, i - prefix.Length), out value);
+        }
+
+        private void PrimeLastSentStateFromCurrent()
+        {
+            _lastVfoAHz = _state.VfoAHz;
+            _lastVfoBHz = _state.VfoBHz;
+            _lastMode = _state.Mode;
+            _lastIsTx = _state.IsTx;
+            _lastSplitOn = _state.SplitOn;
+            _lastActiveVfo = _state.ActiveVfo == 1;
+            _lastAttOn = _state.AttOn;
+            _lastPreAmpOn = _state.PreAmpOn;
+            _lastVoxOn = _state.VoxOn;
+            _lastProcOn = _state.ProcOn;
+            _lastNrState = _state.NrState;
+            _lastBcOn = _state.BcOn;
+            _lastNbOn = _state.NbOn;
+            _lastFineOn = _state.FineOn;
+            _lastAntSel = _state.AntSel;
+            _lastAfValue = _state.AfValue;
+            _lastRfValue = _state.RfValue;
+            _lastSqlValue = _state.SqlValue;
+            _lastIfShiftValue = _state.IfShiftValue;
+            _lastDspHighValue = _state.DspHighValue;
+            _lastDspLowValue = _state.DspLowValue;
+            _lastRitOn = _state.RitOn;
+            _lastXitOn = _state.XitOn;
+            _lastRitOffsetCentiKhz = _state.RitOffsetCentiKhz;
+            _lastTxMicValue = _state.TxMicValue;
+            _lastTxKeyValue = _state.TxKeyValue;
+            _lastTxDelayValue = _state.TxDelayValue;
+            _lastTxPwrValue = _state.TxPwrValue;
+            _lastAtTuneOn = _state.AtTuneOn;
+        }
+
+        private bool TryReadMeterValue(int meterMode, out int value)
+        {
+            value = 0;
+            if (_cat is null)
+                return false;
+
+            _cat.SendCustomCommand($"RM{meterMode};");
+            _cat.RequestSmeterRead();
+            return TryReadSmeterRaw(out value);
+        }
+
+        private bool TryReadSmeterRaw(out int value)
+        {
+            value = 0;
+            if (_cat is null)
+                return false;
+
+            // First choice: direct OmniRig signal property when available.
+            if (_cat.TryReadSignalLevel(out int level))
+            {
+                // Normalize typical 0..255 style to TS-570 style 0..30.
+                value = Math.Clamp((int)Math.Round(level * (30.0 / 255.0)), 0, 30);
+                _lastMeterDebugText = $"prop={level}";
+                return true;
+            }
+
+            _cat.RequestSmeterRead();
+            if (_cat.TryGetLastSmeterRaw(out int raw, out string rawText))
+            {
+                value = raw;
+                _lastMeterDebugText = $"event='{rawText}'";
+                return true;
+            }
+
+            _lastMeterDebugText = $"CustomReply no SM yet ({_cat.GetCustomReplyDebug()})";
+            return false;
+        }
+
+        private void ShowMeterDebug(string text)
+        {
+            if (!_meterDebugEnabled)
+            {
+                txtSmeter.Visibility = Visibility.Collapsed;
+                return;
+            }
+            txtSmeter.Visibility = Visibility.Visible;
+            txtSmeter.Foreground = LcdActiveBrush;
+            txtSmeter.Text = text;
+        }
+
+        private static double MapSmeterRawToRatio(int raw0to30)
+        {
+            int raw = Math.Clamp(raw0to30, 0, 30);
+
+            // Field calibration (Rafa station):
+            // keep low end (around S3) as-is, boost mid/high range because
+            // real S9 was visually landing around S5/S6 in the app.
+            int calibrated = raw <= 3
+                ? raw
+                : raw <= 12
+                    ? raw + 4
+                    : raw + 6;
+            calibrated = Math.Clamp(calibrated, 0, 30);
+
+            // TS-570 style visual calibration:
+            // - Raw 0..9 maps to S0..S9 region (about first 14/30 of bar length)
+            // - Raw 10..30 maps to +dB region (remaining part up to +60 dB mark)
+            const double s9Ratio = 14.0 / 30.0;
+            if (calibrated <= 9)
+                return (calibrated / 9.0) * s9Ratio;
+
+            return s9Ratio + ((calibrated - 9) / 21.0) * (1.0 - s9Ratio);
+        }
+
+        private static double MapSwrRawToRatio(int raw0to30)
+        {
+            int raw = Math.Clamp(raw0to30, 0, 30);
+
+            // SWR legend is non-linear: 1 -> 1.5 -> 3 -> infinity.
+            // Field calibration: previous mapping read too low.
+            // New mapping pushes low/mid values up so SWR~1.5 lands near 4 segments.
+            const double zone1 = 4.0 / 13.0;   // around "1.5" mark
+            const double zone2 = 8.0 / 13.0;   // around "3" mark
+
+            if (raw <= 3)
+                return (raw / 3.0) * zone1;
+            if (raw <= 10)
+                return zone1 + ((raw - 3) / 7.0) * (zone2 - zone1);
+            return zone2 + ((raw - 10) / 20.0) * (1.0 - zone2);
+        }
+
+        private static void SetSegmentFill(System.Windows.Shapes.Rectangle[]? segments, double ratio0to1)
+        {
+            if (segments is null || segments.Length == 0)
+                return;
+
+            int litCount = (int)Math.Round(Math.Clamp(ratio0to1, 0.0, 1.0) * segments.Length);
+            for (int i = 0; i < segments.Length; i++)
+                segments[i].Fill = i < litCount ? LcdActiveBrush : LcdGhostBrush;
+        }
+
+        private void SetSharedMeterFill(double ratio0to1)
+        {
+            SetSegmentFill(_sharedMeterSegments, ratio0to1);
+            UpdateSmeterTickMarkers(ratio0to1);
+        }
+
+        private void UpdateSmeterTickMarkers(double ratio0to1)
+        {
+            if (_sharedMeterSegments is null || _sharedMeterSegments.Length == 0 || _smeterTickMarkers is null)
+                return;
+
+            int litCount = (int)Math.Round(Math.Clamp(ratio0to1, 0.0, 1.0) * _sharedMeterSegments.Length);
+            int[] segmentThresholds = { 2, 6, 10, 14, 18 };
+            int n = Math.Min(_smeterTickMarkers.Length, segmentThresholds.Length);
+            for (int i = 0; i < n; i++)
+                _smeterTickMarkers[i].Fill = litCount >= segmentThresholds[i] ? LcdActiveBrush : LcdGhostBrush;
+        }
+
+        private void ForceLegendLit()
+        {
+            // Kept for backward compatibility with previous calls.
+            UpdateMeterLegendVisibility();
+        }
+
+        private static void SetOpacityRecursive(DependencyObject root, double opacity)
+        {
+            if (root is UIElement ui)
+                ui.Opacity = opacity;
+
+            int n = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < n; i++)
+                SetOpacityRecursive(VisualTreeHelper.GetChild(root, i), opacity);
+        }
+
         private void UpdateLcdBadges()
         {
+            UpdateMeterLegendVisibility();
             Show(badgeTx, _state.IsTx);
             Show(badgeRx, !_state.IsTx);
             Show(badgeAt, _state.AtTuneOn);
@@ -259,6 +1179,7 @@ namespace TS570_Remote
             Show(badgeXit, _state.XitOn);
             Show(badgeFast, _state.AgcFast);
             Show(badgeMch, _state.MemMode);
+            Show(badgeCtrl, _catRigOnline);
             Show(badgeVfoA, !_state.MemMode && _state.ActiveVfo == 0);
             Show(badgeVfoB, !_state.MemMode && _state.ActiveVfo == 1);
             Show(badgeVfoM, _state.MemMode);
@@ -266,7 +1187,7 @@ namespace TS570_Remote
             Show(badgeFLock, _state.FLockOn);
             Show(badge1MHz, _state.Step1MHz);
             Show(badgeBC, _state.BcOn);
-            Show(badgeTxPwr, true);
+            Show(badgeTxPwr, false);
             txtPwrBadge.Text = "TX EQ.";
 
             Show(badgeLsb, _state.Mode == RadioMode.Lsb);
@@ -285,6 +1206,9 @@ namespace TS570_Remote
 
         private void UpdateRitDisplay()
         {
+            if (TryShowTxParamDisplay())
+                return;
+
             if (!_state.RitOn)
             {
                 UpdateFilterDisplay();
@@ -361,6 +1285,9 @@ namespace TS570_Remote
 
         private void UpdateFilterDisplay()
         {
+            if (TryShowTxParamDisplay())
+                return;
+
             if (_state.RitOn)
                 return;
 
@@ -373,6 +1300,39 @@ namespace TS570_Remote
 
             txtRightAlpha.Text = GetCurrentFilterText();
             txtRightAlpha.Foreground = LcdActiveBrush;
+        }
+
+        private bool TryShowTxParamDisplay()
+        {
+            if (_activeTxParam == TxParam.None)
+            {
+                txtRightPwrDigits.Visibility = Visibility.Collapsed;
+                return false;
+            }
+
+            if (_activeTxParam == TxParam.Pwr)
+            {
+                int pwr = _core.NormalizeTxPower(_state.TxPwrValue);
+                txtRightAlpha.Text = "PWR-";
+                txtRightAlpha.Foreground = LcdActiveBrush;
+                string digits = pwr.ToString();
+                txtRightPwrDigits.Text = digits;
+                txtRightPwrDigits.Foreground = LcdActiveBrush;
+                // Per-length anchoring so digits land exactly on LCD ghost cells.
+                // 100 -> cells 5-6-7, 95 -> 6-7, 5 -> 7.
+                double left = digits.Length switch
+                {
+                    3 => 425,
+                    2 => 452,
+                    _ => 479
+                };
+                Canvas.SetLeft(txtRightPwrDigits, left);
+                txtRightPwrDigits.Visibility = Visibility.Visible;
+                return true;
+            }
+
+            txtRightPwrDigits.Visibility = Visibility.Collapsed;
+            return false;
         }
 
         private string GetCurrentFilterText()
@@ -446,8 +1406,18 @@ namespace TS570_Remote
             txtStatusRight.Text = "  UI synchronized with local state";
         }
 
-        private void btnPf_Click(object sender, RoutedEventArgs e) => txtStatusRight.Text = "  PF triggered (local stub)";
-        private void btnPower_Click(object sender, RoutedEventArgs e) => txtStatusRight.Text = "  Power command simulated";
+        private void btnPf_Click(object sender, RoutedEventArgs e)
+        {
+            // PF mapped to Voice Recall sample command in CatCommandMap.
+            _cat?.SendCustomCommand("VR1;");
+            txtStatusRight.Text = "  PF: VR1 sent";
+        }
+
+        private void btnPower_Click(object sender, RoutedEventArgs e)
+        {
+            _cat?.SendCustomCommand("PS0;");
+            txtStatusRight.Text = "  Power command sent";
+        }
 
         private void btnAtt_Click(object sender, RoutedEventArgs e) { _core.ToggleAtt(); SetActive(btnAtt, _state.AttOn); UpdateLcdBadges(); }
         private void btnPreAmp_Click(object sender, RoutedEventArgs e) { _core.TogglePreAmp(); SetActive(btnPreAmp, _state.PreAmpOn); UpdateLcdBadges(); }
@@ -506,7 +1476,11 @@ namespace TS570_Remote
                 : $"  AT TUNE FAIL {hz / 1_000_000.0:0.000} MHz";
         }
         private void btnBC_Click(object sender, RoutedEventArgs e) { _core.ToggleBc(); SetActive(btnBC, _state.BcOn); UpdateLcdBadges(); }
-        private void btnCwTune_Click(object sender, RoutedEventArgs e) => txtStatusRight.Text = "  CW TUNE simulated";
+        private void btnCwTune_Click(object sender, RoutedEventArgs e)
+        {
+            _cat?.SendCustomCommand("CA1;");
+            txtStatusRight.Text = "  CW TUNE triggered";
+        }
 
         private void btnNR_Click(object sender, RoutedEventArgs e)
         {
@@ -527,6 +1501,21 @@ namespace TS570_Remote
         private void SelectTxParam(TxParam p)
         {
             _activeTxParam = _activeTxParam == p ? TxParam.None : p;
+            RefreshTxParamButtons();
+
+            _state.MultiChValue = _activeTxParam switch
+            {
+                TxParam.Mic => _state.TxMicValue,
+                TxParam.Pwr => _state.TxPwrValue,
+                TxParam.Key => _state.TxKeyValue,
+                TxParam.Delay => _state.TxDelayValue,
+                _ => _state.MultiChValue
+            };
+            UpdateRitDisplay();
+        }
+
+        private void RefreshTxParamButtons()
+        {
             SetActive(btnMic, _activeTxParam == TxParam.Mic);
             SetActive(btnPwr, _activeTxParam == TxParam.Pwr);
             SetActive(btnKey, _activeTxParam == TxParam.Key);
@@ -534,14 +1523,33 @@ namespace TS570_Remote
         }
 
         private void btnMic_Click(object s, RoutedEventArgs e) => SelectTxParam(TxParam.Mic);
-        private void btnPwr_Click(object s, RoutedEventArgs e) { SelectTxParam(TxParam.Pwr); _state.TxPwrValue = _core.NormalizeTxPower(_state.TxPwrValue); _state.MultiChValue = _state.TxPwrValue; }
+        private void btnPwr_Click(object s, RoutedEventArgs e)
+        {
+            if (_activeTxParam == TxParam.Pwr)
+            {
+                _activeTxParam = TxParam.None;
+                RefreshTxParamButtons();
+                UpdateRitDisplay();
+                return;
+            }
+
+            _activeTxParam = TxParam.Pwr;
+            RefreshTxParamButtons();
+            _state.TxPwrValue = _core.NormalizeTxPower(_state.TxPwrValue);
+            _state.MultiChValue = _state.TxPwrValue;
+            UpdateRitDisplay();
+        }
         private void btnKey_Click(object s, RoutedEventArgs e) => SelectTxParam(TxParam.Key);
         private void btnDelay_Click(object s, RoutedEventArgs e) => SelectTxParam(TxParam.Delay);
 
         private void btnLsbUsb_Click(object sender, RoutedEventArgs e) { StopScanIfRunning("mode changed"); _core.CycleLsbUsb(); txtMode.Text = GetModeName(_state.Mode); UpdateModeButtonStyles(_state.Mode); UpdateLcdBadges(); UpdateFilterDisplay(); }
         private void btnCwFsk_Click(object sender, RoutedEventArgs e) { StopScanIfRunning("mode changed"); _core.CycleCwFsk(); txtMode.Text = GetModeName(_state.Mode); UpdateModeButtonStyles(_state.Mode); UpdateLcdBadges(); UpdateFilterDisplay(); }
         private void btnFmAm_Click(object sender, RoutedEventArgs e) { StopScanIfRunning("mode changed"); _core.CycleFmAm(); txtMode.Text = GetModeName(_state.Mode); UpdateModeButtonStyles(_state.Mode); UpdateLcdBadges(); UpdateFilterDisplay(); }
-        private void btnMenu_Click(object sender, RoutedEventArgs e) => MessageBox.Show("Menu simulation pending.", "MENU", MessageBoxButton.OK, MessageBoxImage.Information);
+        private void btnMenu_Click(object sender, RoutedEventArgs e)
+        {
+            // TS-570 menu has no single generic CAT "menu key" command in our map; surface clearly.
+            txtStatusRight.Text = "  MENU: no CAT command mapped";
+        }
 
         private void btn1MHz_Click(object sender, RoutedEventArgs e)
         {
@@ -694,7 +1702,7 @@ namespace TS570_Remote
             UpdateAuxDisplay();
         }
         private void btnAeqB_Click(object sender, RoutedEventArgs e) { if (GuardFrequencyLock()) return; _core.CopyAtoB(); }
-        private void btnCLS_Click(object sender, RoutedEventArgs e) { _core.ClearRitXit(); SetActive(btnRit, false); SetActive(btnXit, false); UpdateLcdBadges(); UpdateRitDisplay(); UpdateFrequencyReadout(); }
+        private void btnCLS_Click(object sender, RoutedEventArgs e) { _core.ClearRitXit(); _cat?.SendCustomCommand("RC;"); _lastRitOffsetCentiKhz = 0; SetActive(btnRit, false); SetActive(btnXit, false); UpdateLcdBadges(); UpdateRitDisplay(); UpdateFrequencyReadout(); }
         private void btnXit_Click(object sender, RoutedEventArgs e) { _core.ToggleXit(); SetActive(btnXit, _state.XitOn); UpdateLcdBadges(); }
         private void btnScan_Click(object sender, RoutedEventArgs e)
         {
@@ -764,7 +1772,24 @@ namespace TS570_Remote
         private void btnKey6_Click(object s, RoutedEventArgs e) { _core.ToggleFine(); SetActive(btnFine, _state.FineOn); UpdateLcdBadges(); }
         private void btnKey7_Click(object s, RoutedEventArgs e) { _core.ToggleNb(); SetActive(btnNB, _state.NbOn); UpdateLcdBadges(); }
         private void btnKey8_Click(object s, RoutedEventArgs e) { _core.ToggleAgcFast(); SetActive(btnAGC, _state.AgcFast); UpdateLcdBadges(); }
-        private void btnKey9_Click(object s, RoutedEventArgs e) => txtStatusRight.Text = "  REV simulated";
+        private void btnKey9_Click(object s, RoutedEventArgs e)
+        {
+            // Keep REV consistent with our current state model (LSB<->USB).
+            // CW/FSK reverse sidebands require extra state not modeled yet.
+            RadioMode next = GetReverseMode(_state.Mode);
+            if (next == _state.Mode)
+            {
+                txtStatusRight.Text = "  REV: not mapped for this mode";
+                return;
+            }
+
+            _state.Mode = next;
+            txtMode.Text = GetModeName(_state.Mode);
+            UpdateModeButtonStyles(_state.Mode);
+            UpdateLcdBadges();
+            UpdateFilterDisplay();
+            txtStatusRight.Text = $"  REV: {_state.Mode}";
+        }
         private void btnKey0_Click(object s, RoutedEventArgs e) { _core.ToggleFLock(); UpdateLcdBadges(); }
 
         private void btnKeypad_Click(object sender, RoutedEventArgs e)
@@ -1011,19 +2036,18 @@ namespace TS570_Remote
             UpdateFrequencyReadout();
         }
 
-        private void AfRfOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.RfValue = ClampKnobValue(_state.RfValue + step); _afRfOuterAngle = NormalizeAngle(_afRfOuterAngle + AngleFromSteps(step)); rtAfRfOuter.Angle = _afRfOuterAngle; e.Handled = true; }
-        private void AfRfInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.AfValue = ClampKnobValue(_state.AfValue + step); _afRfInnerAngle = NormalizeAngle(_afRfInnerAngle + AngleFromSteps(step)); rtAfRfInner.Angle = _afRfInnerAngle; e.Handled = true; }
-        private void IfSqlOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.IfShiftValue = ClampKnobValue(_state.IfShiftValue + step); _ifSqlOuterAngle = NormalizeAngle(_ifSqlOuterAngle + AngleFromSteps(step)); rtIfSqlOuter.Angle = _ifSqlOuterAngle; e.Handled = true; }
-        private void IfSqlInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.SqlValue = ClampKnobValue(_state.SqlValue + step); _ifSqlInnerAngle = NormalizeAngle(_ifSqlInnerAngle + AngleFromSteps(step)); rtIfSqlInner.Angle = _ifSqlInnerAngle; e.Handled = true; }
-        private void DspSlopeOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.DspHighValue = ClampKnobValue(_state.DspHighValue + step); _dspSlopeOuterAngle = NormalizeAngle(_dspSlopeOuterAngle + AngleFromSteps(step)); rtDspSlopeOuter.Angle = _dspSlopeOuterAngle; e.Handled = true; }
-        private void DspSlopeInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.DspLowValue = ClampKnobValue(_state.DspLowValue + step); _dspSlopeInnerAngle = NormalizeAngle(_dspSlopeInnerAngle + AngleFromSteps(step)); rtDspSlopeInner.Angle = _dspSlopeInnerAngle; e.Handled = true; }
+        private void AfRfOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.RfValue = ClampKnobValue(_state.RfValue + step); _afRfOuterAngle = KnobAngleFromValue(_state.RfValue); rtAfRfOuter.Angle = _afRfOuterAngle; e.Handled = true; }
+        private void AfRfInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.AfValue = ClampKnobValue(_state.AfValue + step); _afRfInnerAngle = KnobAngleFromValue(_state.AfValue); rtAfRfInner.Angle = _afRfInnerAngle; e.Handled = true; }
+        private void IfSqlOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.IfShiftValue = ClampKnobValue(_state.IfShiftValue + step); _ifSqlOuterAngle = KnobAngleFromValue(_state.IfShiftValue); rtIfSqlOuter.Angle = _ifSqlOuterAngle; e.Handled = true; }
+        private void IfSqlInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.SqlValue = ClampKnobValue(_state.SqlValue + step); _ifSqlInnerAngle = KnobAngleFromValue(_state.SqlValue); rtIfSqlInner.Angle = _ifSqlInnerAngle; e.Handled = true; }
+        private void DspSlopeOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.DspHighValue = ClampKnobValue(_state.DspHighValue + step); _dspSlopeOuterAngle = KnobAngleFromValue(_state.DspHighValue); rtDspSlopeOuter.Angle = _dspSlopeOuterAngle; e.Handled = true; }
+        private void DspSlopeInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.DspLowValue = ClampKnobValue(_state.DspLowValue + step); _dspSlopeInnerAngle = KnobAngleFromValue(_state.DspLowValue); rtDspSlopeInner.Angle = _dspSlopeInnerAngle; e.Handled = true; }
         private void PhonesKnob_MouseWheel(object sender, MouseWheelEventArgs e) { _state.PhonesValue = ClampKnobValue(_state.PhonesValue + WheelSteps(e)); UpdateGainMeters(); UpdatePhonesMicKnobsVisual(); SyncPhonesMonitorGain(); e.Handled = true; }
         private void MicGainKnob_MouseWheel(object sender, MouseWheelEventArgs e) { _state.MicGainValue = ClampKnobValue(_state.MicGainValue + WheelSteps(e)); UpdateGainMeters(); UpdatePhonesMicKnobsVisual(); SyncMicWindowsEndpointVolume(); e.Handled = true; }
 
         private void MultiChKnob_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             int detent = e.Delta > 0 ? 1 : -1;
-            _state.MultiChValue = Math.Clamp(_state.MultiChValue + detent, 1, 99);
             _multiChAngle = NormalizeAngle(_multiChAngle + detent * 8);
             rtMultiCh.Angle = _multiChAngle;
 
@@ -1040,12 +2064,30 @@ namespace TS570_Remote
                 UpdateFrequencyReadout();
                 UpdateAuxDisplay();
             }
+            else if (_activeTxParam == TxParam.Mic)
+            {
+                _state.TxMicValue = ClampKnobValue(_state.TxMicValue + detent);
+                _state.MultiChValue = _state.TxMicValue;
+            }
             else if (_activeTxParam == TxParam.Pwr)
             {
                 _state.TxPwrValue = _core.NormalizeTxPower(_state.TxPwrValue + detent * 5);
+                _state.MultiChValue = _state.TxPwrValue;
+                UpdateRitDisplay();
+            }
+            else if (_activeTxParam == TxParam.Key)
+            {
+                _state.TxKeyValue = ClampKnobValue(_state.TxKeyValue + detent);
+                _state.MultiChValue = _state.TxKeyValue;
+            }
+            else if (_activeTxParam == TxParam.Delay)
+            {
+                _state.TxDelayValue = ClampKnobValue(_state.TxDelayValue + detent);
+                _state.MultiChValue = _state.TxDelayValue;
             }
             else
             {
+                _state.MultiChValue = Math.Clamp(_state.MultiChValue + detent, 1, 99);
                 StepMultiChFrequency(detent);
             }
 
@@ -1059,7 +2101,7 @@ namespace TS570_Remote
             _ritXitAngle = NormalizeAngle(_ritXitAngle + AngleFromSteps(detent));
             rtRitXit.Angle = _ritXitAngle;
 
-            if (_state.RitOn)
+            if (_state.RitOn || _state.XitOn)
             {
                 UpdateRitDisplay();
                 UpdateFrequencyReadout();
@@ -1173,27 +2215,27 @@ namespace TS570_Remote
 
         private void AfRfOuterKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void AfRfOuterKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void AfRfOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.RfValue = ClampKnobValue(_state.RfValue + steps); _afRfOuterAngle = NormalizeAngle(_afRfOuterAngle + AngleFromSteps(steps)); rtAfRfOuter.Angle = _afRfOuterAngle; }
+        private void AfRfOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.RfValue = ClampKnobValue(_state.RfValue + steps); _afRfOuterAngle = KnobAngleFromValue(_state.RfValue); rtAfRfOuter.Angle = _afRfOuterAngle; }
 
         private void AfRfInnerKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void AfRfInnerKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void AfRfInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.AfValue = ClampKnobValue(_state.AfValue + steps); _afRfInnerAngle = NormalizeAngle(_afRfInnerAngle + AngleFromSteps(steps)); rtAfRfInner.Angle = _afRfInnerAngle; }
+        private void AfRfInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.AfValue = ClampKnobValue(_state.AfValue + steps); _afRfInnerAngle = KnobAngleFromValue(_state.AfValue); rtAfRfInner.Angle = _afRfInnerAngle; }
 
         private void IfSqlOuterKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void IfSqlOuterKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void IfSqlOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.IfShiftValue = ClampKnobValue(_state.IfShiftValue + steps); _ifSqlOuterAngle = NormalizeAngle(_ifSqlOuterAngle + AngleFromSteps(steps)); rtIfSqlOuter.Angle = _ifSqlOuterAngle; }
+        private void IfSqlOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.IfShiftValue = ClampKnobValue(_state.IfShiftValue + steps); _ifSqlOuterAngle = KnobAngleFromValue(_state.IfShiftValue); rtIfSqlOuter.Angle = _ifSqlOuterAngle; }
 
         private void IfSqlInnerKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void IfSqlInnerKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void IfSqlInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.SqlValue = ClampKnobValue(_state.SqlValue + steps); _ifSqlInnerAngle = NormalizeAngle(_ifSqlInnerAngle + AngleFromSteps(steps)); rtIfSqlInner.Angle = _ifSqlInnerAngle; }
+        private void IfSqlInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.SqlValue = ClampKnobValue(_state.SqlValue + steps); _ifSqlInnerAngle = KnobAngleFromValue(_state.SqlValue); rtIfSqlInner.Angle = _ifSqlInnerAngle; }
 
         private void DspSlopeOuterKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void DspSlopeOuterKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void DspSlopeOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.DspHighValue = ClampKnobValue(_state.DspHighValue + steps); _dspSlopeOuterAngle = NormalizeAngle(_dspSlopeOuterAngle + AngleFromSteps(steps)); rtDspSlopeOuter.Angle = _dspSlopeOuterAngle; }
+        private void DspSlopeOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.DspHighValue = ClampKnobValue(_state.DspHighValue + steps); _dspSlopeOuterAngle = KnobAngleFromValue(_state.DspHighValue); rtDspSlopeOuter.Angle = _dspSlopeOuterAngle; }
 
         private void DspSlopeInnerKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void DspSlopeInnerKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void DspSlopeInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.DspLowValue = ClampKnobValue(_state.DspLowValue + steps); _dspSlopeInnerAngle = NormalizeAngle(_dspSlopeInnerAngle + AngleFromSteps(steps)); rtDspSlopeInner.Angle = _dspSlopeInnerAngle; }
+        private void DspSlopeInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.DspLowValue = ClampKnobValue(_state.DspLowValue + steps); _dspSlopeInnerAngle = KnobAngleFromValue(_state.DspLowValue); rtDspSlopeInner.Angle = _dspSlopeInnerAngle; }
 
         private void RitXitKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void RitXitKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
@@ -1222,7 +2264,6 @@ namespace TS570_Remote
             int steps = ComputeDragSteps(e, el);
             if (steps == 0) return;
 
-            _state.MultiChValue = Math.Clamp(_state.MultiChValue + steps, 1, 99);
             _multiChAngle = NormalizeAngle(_multiChAngle + AngleFromSteps(steps));
             rtMultiCh.Angle = _multiChAngle;
 
@@ -1239,12 +2280,30 @@ namespace TS570_Remote
                 UpdateFrequencyReadout();
                 UpdateAuxDisplay();
             }
+            else if (_activeTxParam == TxParam.Mic)
+            {
+                _state.TxMicValue = ClampKnobValue(_state.TxMicValue + steps);
+                _state.MultiChValue = _state.TxMicValue;
+            }
             else if (_activeTxParam == TxParam.Pwr)
             {
                 _state.TxPwrValue = _core.NormalizeTxPower(_state.TxPwrValue + (steps * 5));
+                _state.MultiChValue = _state.TxPwrValue;
+                UpdateRitDisplay();
+            }
+            else if (_activeTxParam == TxParam.Key)
+            {
+                _state.TxKeyValue = ClampKnobValue(_state.TxKeyValue + steps);
+                _state.MultiChValue = _state.TxKeyValue;
+            }
+            else if (_activeTxParam == TxParam.Delay)
+            {
+                _state.TxDelayValue = ClampKnobValue(_state.TxDelayValue + steps);
+                _state.MultiChValue = _state.TxDelayValue;
             }
             else
             {
+                _state.MultiChValue = Math.Clamp(_state.MultiChValue + steps, 1, 99);
                 StepMultiChFrequency(steps);
             }
         }
