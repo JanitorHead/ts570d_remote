@@ -1,5 +1,7 @@
 # ts570d_remote
 
+Kenwood TS-570D remote control software for Windows using WPF and OmniRig CAT.
+
 **Latest release:** `v0.3.0` (Git tag/release).  
 **Project file version:** `0.2.0` in `TS570_Remote.csproj` (not yet bumped to match the release tag).
 
@@ -117,3 +119,15 @@ Default build output is under `TS570_Remote/bin/<Configuration>/net10.0-windows/
 This project is released under the [MIT License](LICENSE).
 
 **Safety:** Use at your own risk around real radios and RF equipment. The MIT License does not cover liability for how you operate hardware.
+
+## Search and discoverability
+
+To help Google index this project, a lightweight GitHub Pages SEO setup is included under `docs/`:
+
+- `docs/index.md`
+- `docs/robots.txt`
+- `docs/sitemap.xml`
+
+Expected Pages URL:
+
+- https://janitorhead.github.io/ts570d_remote/

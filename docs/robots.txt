@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://janitorhead.github.io/ts570d_remote/sitemap.xml
