@@ -1078,7 +1078,7 @@ namespace TS570_Remote
         {
             int raw = Math.Clamp(raw0to30, 0, 30);
 
-            // Field calibration (Rafa station):
+            // Field calibration (real rig, on-air):
             // keep low end (around S3) as-is, boost mid/high range because
             // real S9 was visually landing around S5/S6 in the app.
             int calibrated = raw <= 3
