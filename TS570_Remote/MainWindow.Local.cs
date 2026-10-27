@@ -8,8 +8,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using TS570_Remote.Controls;
 
 namespace TS570_Remote
 {
@@ -109,15 +110,18 @@ namespace TS570_Remote
         private const int MeterAlc = 2;
         private const int MeterComp = 3;
 
-        private double _afRfOuterAngle;
-        private double _afRfInnerAngle;
-        private double _ifSqlOuterAngle;
-        private double _ifSqlInnerAngle;
-        private double _dspSlopeOuterAngle;
-        private double _dspSlopeInnerAngle;
+        // Endless encoders keep accumulating so eased turns never take the long way round.
         private double _ritXitAngle;
         private double _multiChAngle;
         private double _vfoMainAngle;
+
+        /// <summary>Bounded front-panel pots (value 0..100, knob sweep ±120°).</summary>
+        private enum Pot { Phones, Mic, Af, Rf, IfShift, Sql, DspHigh, DspLow }
+
+        private readonly DispatcherTimer _hudHideTimer;
+        private static readonly Duration HudFade = new(TimeSpan.FromMilliseconds(140));
+        private static readonly Color StatusRestColor = Color.FromRgb(0x8E, 0x90, 0x9A);
+        private static readonly Color StatusFlashColor = Color.FromRgb(0xFF, 0xB0, 0x3A);
 
         private bool _isDraggingKnob;
         private Point _lastKnobPoint;
@@ -151,6 +155,9 @@ namespace TS570_Remote
             _scanTimer.Tick += ScanTimer_Tick;
             _catSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _catSyncTimer.Tick += CatSyncTimer_Tick;
+            _hudHideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+            _hudHideTimer.Tick += (_, _) => HideKnobHud();
+            SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
 
             if (DesignerProperties.GetIsInDesignMode(this))
                 return;
@@ -181,13 +188,14 @@ namespace TS570_Remote
             ApplyUiFromState();
             txtStatusRight.Text = "  TS-570 local core ready";
 
-            meterPhonesTrack.SizeChanged += (_, _) => UpdateGainMeters();
-            meterMicTrack.SizeChanged += (_, _) => UpdateGainMeters();
+            DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock))
+                .AddValueChanged(txtStatusRight, (_, _) => FlashStatusRight());
+
             ContentRendered += (_, _) =>
             {
-                UpdateGainMeters();
                 EnsureMeterSegmentsInitialized();
                 ClearRadioMeterBars();
+                PlayPowerOnKnobSweep();
             };
 
             Closing += (_, _) => _acc2Bridge?.Dispose();
@@ -766,18 +774,6 @@ namespace TS570_Remote
             return Color.FromRgb(r, g, b);
         }
 
-        private void UpdateGainMeters()
-        {
-            SetMeterFill(meterPhonesTrack, meterPhonesFill, _state.PhonesValue, 46);
-            SetMeterFill(meterMicTrack, meterMicFill, _state.MicGainValue, 52);
-        }
-
-        private static void SetMeterFill(Border track, System.Windows.Shapes.Rectangle fill, int value0to100, double fallbackHeight)
-        {
-            double trackH = track.ActualHeight > 4 ? track.ActualHeight : fallbackHeight;
-            fill.Height = trackH * Math.Clamp(value0to100, 0, 100) / 100.0;
-        }
-
         private void ApplyUiFromState()
         {
             UpdateFrequencyReadout();
@@ -806,27 +802,173 @@ namespace TS570_Remote
             SetActive(btnNB, _state.NbOn);
             SetActive(btnAGC, _state.AgcFast);
 
-            btnNR.Content = _state.NrState switch { 0 => "N.R", 1 => "N.R.1", _ => "N.R.2" };
+            btnNR.Content = _state.NrState switch { 0 => "N.R.", 1 => "N.R.1", _ => "N.R.2" };
             SetActive(btnFilter, _isFilterAdjustMode);
-            UpdateGainMeters();
-            UpdatePhonesMicKnobsVisual();
-            _afRfOuterAngle = KnobAngleFromValue(_state.RfValue);
-            _afRfInnerAngle = KnobAngleFromValue(_state.AfValue);
-            rtAfRfOuter.Angle = _afRfOuterAngle;
-            rtAfRfInner.Angle = _afRfInnerAngle;
+            UpdatePotKnobs();
             UpdateMeterLegendVisibility();
             SyncPhonesMonitorGain();
             SyncMicWindowsEndpointVolume();
         }
 
-        private void UpdatePhonesMicKnobsVisual()
+        /// <summary>Points every bounded pot at its current state value.</summary>
+        private void UpdatePotKnobs()
         {
-            rtPhones.Angle = (_state.PhonesValue - 50) * 2.4;
-            rtMicGain.Angle = (_state.MicGainValue - 50) * 2.4;
+            foreach (Pot pot in Enum.GetValues<Pot>())
+                KnobFor(pot).TurnTo(KnobAngleFromValue(GetPot(pot)));
         }
 
+        /// <summary>Power-on flourish: every pot sweeps up from its minimum stop to its value.</summary>
+        private void PlayPowerOnKnobSweep()
+        {
+            var delay = TimeSpan.FromMilliseconds(380);
+            foreach (Pot pot in Enum.GetValues<Pot>())
+            {
+                KnobFor(pot).SweepTo(KnobAngleFromValue(0), KnobAngleFromValue(GetPot(pot)), delay, TimeSpan.FromMilliseconds(720));
+                delay += TimeSpan.FromMilliseconds(45);
+            }
+        }
+
+        private RotaryKnob KnobFor(Pot pot) => pot switch
+        {
+            Pot.Phones => knobPhones,
+            Pot.Mic => knobMic,
+            Pot.Af => knobAf,
+            Pot.Rf => knobRf,
+            Pot.IfShift => knobIfShift,
+            Pot.Sql => knobSql,
+            Pot.DspHigh => knobDspHigh,
+            _ => knobDspLow,
+        };
+
+        /// <summary>Concentric pairs anchor the readout on the outer ring so it never covers the knob.</summary>
+        private RotaryKnob HudAnchorFor(Pot pot) => pot switch
+        {
+            Pot.Af => knobRf,
+            Pot.Sql => knobIfShift,
+            Pot.DspLow => knobDspHigh,
+            _ => KnobFor(pot),
+        };
+
+        private int GetPot(Pot pot) => pot switch
+        {
+            Pot.Phones => _state.PhonesValue,
+            Pot.Mic => _state.MicGainValue,
+            Pot.Af => _state.AfValue,
+            Pot.Rf => _state.RfValue,
+            Pot.IfShift => _state.IfShiftValue,
+            Pot.Sql => _state.SqlValue,
+            Pot.DspHigh => _state.DspHighValue,
+            _ => _state.DspLowValue,
+        };
+
+        private static string PotLabel(Pot pot) => pot switch
+        {
+            Pot.Phones => "PHONES",
+            Pot.Mic => "MIC",
+            Pot.Af => "AF",
+            Pot.Rf => "RF",
+            Pot.IfShift => "IF SHIFT",
+            Pot.Sql => "SQL",
+            Pot.DspHigh => "SLOPE HIGH",
+            _ => "SLOPE LOW",
+        };
+
+        /// <summary>Stores a pot value, applies its side effects, turns the knob and shows the readout.</summary>
+        private void SetPot(Pot pot, int value)
+        {
+            value = ClampKnobValue(value);
+            switch (pot)
+            {
+                case Pot.Phones: _state.PhonesValue = value; SyncPhonesMonitorGain(); break;
+                case Pot.Mic: _state.MicGainValue = value; SyncMicWindowsEndpointVolume(); break;
+                case Pot.Af: _state.AfValue = value; break;
+                case Pot.Rf: _state.RfValue = value; break;
+                case Pot.IfShift: _state.IfShiftValue = value; break;
+                case Pot.Sql: _state.SqlValue = value; break;
+                case Pot.DspHigh: _state.DspHighValue = value; break;
+                case Pot.DspLow: _state.DspLowValue = value; break;
+            }
+
+            KnobFor(pot).TurnTo(KnobAngleFromValue(value));
+
+            bool centered = pot == Pot.IfShift;
+            string readout = centered
+                ? (value - 50).ToString("+0;-0;0", CultureInfo.InvariantCulture)
+                : value.ToString(CultureInfo.InvariantCulture);
+            ShowKnobHud(HudAnchorFor(pot), PotLabel(pot), readout, value, centered);
+        }
+
+        private void WheelPot(Pot pot, MouseWheelEventArgs e)
+        {
+            SetPot(pot, GetPot(pot) + WheelSteps(e));
+            e.Handled = true;
+        }
+
+        private void DragPot(Pot pot, object sender, MouseEventArgs e)
+        {
+            if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed)
+                return;
+            int steps = ComputeDragSteps(e, el);
+            if (steps != 0)
+                SetPot(pot, GetPot(pot) + steps);
+        }
+
+        /// <summary>Floats a value readout above <paramref name="anchor"/>; it fades out shortly after the last change.</summary>
+        private void ShowKnobHud(FrameworkElement anchor, string label, string valueText, int level0to100, bool centered)
+        {
+            txtHudLabel.Text = label;
+            txtHudValue.Text = valueText;
+            hudBarCenter.Visibility = centered ? Visibility.Visible : Visibility.Collapsed;
+            hudBarFill.BeginAnimation(WidthProperty,
+                new DoubleAnimation(64.0 * Math.Clamp(level0to100, 0, 100) / 100.0, HudFade), HandoffBehavior.SnapshotAndReplace);
+
+            knobHud.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Size hud = knobHud.DesiredSize;
+            Point top = anchor.TranslatePoint(new Point(anchor.ActualWidth / 2.0, 0), hudLayer);
+            double left = Math.Clamp(top.X - hud.Width / 2.0, 4, Math.Max(4, hudLayer.ActualWidth - hud.Width - 4));
+            Canvas.SetLeft(knobHud, Math.Round(left));
+            Canvas.SetTop(knobHud, Math.Round(Math.Max(4, top.Y - hud.Height - 24)));
+
+            if (knobHud.Opacity < 0.05)
+            {
+                knobHudShift.BeginAnimation(TranslateTransform.YProperty,
+                    new DoubleAnimation(7, 0, new Duration(TimeSpan.FromMilliseconds(200))) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+            }
+            knobHud.BeginAnimation(OpacityProperty, new DoubleAnimation(1, HudFade), HandoffBehavior.SnapshotAndReplace);
+
+            _hudHideTimer.Stop();
+            _hudHideTimer.Start();
+        }
+
+        private void HideKnobHud()
+        {
+            if (_isDraggingKnob)
+                return; // keep the readout while a knob is held; the timer fires again
+
+            _hudHideTimer.Stop();
+            var fade = new Duration(TimeSpan.FromMilliseconds(320));
+            knobHud.BeginAnimation(OpacityProperty, new DoubleAnimation(0, fade), HandoffBehavior.SnapshotAndReplace);
+            knobHudShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-5, fade), HandoffBehavior.SnapshotAndReplace);
+        }
+
+        /// <summary>Status line changes flash amber and slide in, so feedback registers without reading.</summary>
+        private void FlashStatusRight()
+        {
+            statusRightBrush.BeginAnimation(SolidColorBrush.ColorProperty,
+                new ColorAnimation(StatusFlashColor, StatusRestColor, new Duration(TimeSpan.FromMilliseconds(1200)))
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+                });
+            statusRightShift.BeginAnimation(TranslateTransform.XProperty,
+                new DoubleAnimation(-8, 0, new Duration(TimeSpan.FromMilliseconds(240)))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+                });
+        }
+
+        /// <summary>0..100 → pointer angle on the printed 0–10 scale (±150°).</summary>
         private static double KnobAngleFromValue(int value0to100)
-            => (Math.Clamp(value0to100, 0, 100) - 50) * 2.4;
+            => (Math.Clamp(value0to100, 0, 100) - 50) / 50.0 * KnobScale.PotSweep;
 
         private void UpdateMeterLegendVisibility()
         {
@@ -1164,6 +1306,7 @@ namespace TS570_Remote
             UpdateMeterLegendVisibility();
             Show(badgeTx, _state.IsTx);
             Show(badgeRx, !_state.IsTx);
+            PanelFx.SetIsLit(onAirLamp, _state.IsTx);
             Show(badgeAt, _state.AtTuneOn);
             txtAntBadge.Text = "ANT";
             Show(badgeAnt1, _state.AntSel == 1);
@@ -1344,19 +1487,8 @@ namespace TS570_Remote
             b.Opacity = visible ? 1.0 : (20.0 / 255.0);
         }
 
-        private void SetActive(Button btn, bool active)
-        {
-            btn.Foreground = active
-                ? new SolidColorBrush(Color.FromRgb(0xFF, 0x92, 0x00))
-                : new SolidColorBrush(Color.FromRgb(0xD2, 0xD2, 0xD8));
-
-            if (btn == btnMic || btn == btnPwr || btn == btnKey || btn == btnDelay)
-            {
-                btn.Effect = active
-                    ? new DropShadowEffect { Color = Color.FromRgb(0xFF, 0x92, 0x00), BlurRadius = 10, ShadowDepth = 0, Opacity = 0.9 }
-                    : null;
-            }
-        }
+        /// <summary>Lights (amber halo + legend) or darkens a front-panel key.</summary>
+        private static void SetActive(Button btn, bool active) => PanelFx.SetIsLit(btn, active);
 
         private void UpdateTuneStepLabel()
         {
@@ -1833,7 +1965,6 @@ namespace TS570_Remote
             _freqBuffer = "";
         }
 
-        private static double NormalizeAngle(double angle) => angle < 0 ? (angle % 360) + 360 : angle % 360;
         private static int ClampKnobValue(int value) => Math.Clamp(value, 0, 100);
         private static double AngleFromSteps(int steps) => steps * 2.2;
         private static int WheelSteps(MouseWheelEventArgs e) => e.Delta > 0 ? 2 : -2;
@@ -2036,20 +2167,20 @@ namespace TS570_Remote
             UpdateFrequencyReadout();
         }
 
-        private void AfRfOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.RfValue = ClampKnobValue(_state.RfValue + step); _afRfOuterAngle = KnobAngleFromValue(_state.RfValue); rtAfRfOuter.Angle = _afRfOuterAngle; e.Handled = true; }
-        private void AfRfInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.AfValue = ClampKnobValue(_state.AfValue + step); _afRfInnerAngle = KnobAngleFromValue(_state.AfValue); rtAfRfInner.Angle = _afRfInnerAngle; e.Handled = true; }
-        private void IfSqlOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.IfShiftValue = ClampKnobValue(_state.IfShiftValue + step); _ifSqlOuterAngle = KnobAngleFromValue(_state.IfShiftValue); rtIfSqlOuter.Angle = _ifSqlOuterAngle; e.Handled = true; }
-        private void IfSqlInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.SqlValue = ClampKnobValue(_state.SqlValue + step); _ifSqlInnerAngle = KnobAngleFromValue(_state.SqlValue); rtIfSqlInner.Angle = _ifSqlInnerAngle; e.Handled = true; }
-        private void DspSlopeOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.DspHighValue = ClampKnobValue(_state.DspHighValue + step); _dspSlopeOuterAngle = KnobAngleFromValue(_state.DspHighValue); rtDspSlopeOuter.Angle = _dspSlopeOuterAngle; e.Handled = true; }
-        private void DspSlopeInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) { int step = WheelSteps(e); _state.DspLowValue = ClampKnobValue(_state.DspLowValue + step); _dspSlopeInnerAngle = KnobAngleFromValue(_state.DspLowValue); rtDspSlopeInner.Angle = _dspSlopeInnerAngle; e.Handled = true; }
-        private void PhonesKnob_MouseWheel(object sender, MouseWheelEventArgs e) { _state.PhonesValue = ClampKnobValue(_state.PhonesValue + WheelSteps(e)); UpdateGainMeters(); UpdatePhonesMicKnobsVisual(); SyncPhonesMonitorGain(); e.Handled = true; }
-        private void MicGainKnob_MouseWheel(object sender, MouseWheelEventArgs e) { _state.MicGainValue = ClampKnobValue(_state.MicGainValue + WheelSteps(e)); UpdateGainMeters(); UpdatePhonesMicKnobsVisual(); SyncMicWindowsEndpointVolume(); e.Handled = true; }
+        private void AfRfOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.Rf, e);
+        private void AfRfInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.Af, e);
+        private void IfSqlOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.IfShift, e);
+        private void IfSqlInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.Sql, e);
+        private void DspSlopeOuterKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.DspHigh, e);
+        private void DspSlopeInnerKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.DspLow, e);
+        private void PhonesKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.Phones, e);
+        private void MicGainKnob_MouseWheel(object sender, MouseWheelEventArgs e) => WheelPot(Pot.Mic, e);
 
         private void MultiChKnob_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             int detent = e.Delta > 0 ? 1 : -1;
-            _multiChAngle = NormalizeAngle(_multiChAngle + detent * 8);
-            rtMultiCh.Angle = _multiChAngle;
+            _multiChAngle += detent * 8;
+            knobMultiCh.TurnTo(_multiChAngle);
 
             if (_isFilterAdjustMode)
             {
@@ -2098,8 +2229,8 @@ namespace TS570_Remote
         {
             int detent = e.Delta > 0 ? 1 : -1;
             _core.AdjustRitOffset(detent);
-            _ritXitAngle = NormalizeAngle(_ritXitAngle + AngleFromSteps(detent));
-            rtRitXit.Angle = _ritXitAngle;
+            _ritXitAngle += AngleFromSteps(detent);
+            knobRitXit.TurnTo(_ritXitAngle);
 
             if (_state.RitOn || _state.XitOn)
             {
@@ -2117,8 +2248,8 @@ namespace TS570_Remote
 
             int ticks = e.Delta > 0 ? 1 : -1;
             _core.SetScanDirection(ticks >= 0 ? 1 : -1);
-            _vfoMainAngle = NormalizeAngle(_vfoMainAngle + ticks * 3.6);
-            rtVfoMain.Angle = _vfoMainAngle;
+            _vfoMainAngle += ticks * 3.6;
+            knobVfoMain.TurnTo(_vfoMainAngle);
             if (_state.MemMode)
             {
                 StepUsedMemoryChannel(ticks >= 0 ? 1 : -1, "MEM dial");
@@ -2172,8 +2303,8 @@ namespace TS570_Remote
             {
                 _vfoDragAccumulator -= degreesPerDetent;
                 _core.SetScanDirection(1);
-                _vfoMainAngle = NormalizeAngle(_vfoMainAngle + 1.8);
-                rtVfoMain.Angle = _vfoMainAngle;
+                _vfoMainAngle += 1.8;
+                knobVfoMain.TurnTo(_vfoMainAngle);
                 if (_state.MemMode)
                     StepUsedMemoryChannel(1, "MEM drag");
                 else
@@ -2184,8 +2315,8 @@ namespace TS570_Remote
             {
                 _vfoDragAccumulator += degreesPerDetent;
                 _core.SetScanDirection(-1);
-                _vfoMainAngle = NormalizeAngle(_vfoMainAngle - 1.8);
-                rtVfoMain.Angle = _vfoMainAngle;
+                _vfoMainAngle -= 1.8;
+                knobVfoMain.TurnTo(_vfoMainAngle);
                 if (_state.MemMode)
                     StepUsedMemoryChannel(-1, "MEM drag");
                 else
@@ -2207,35 +2338,35 @@ namespace TS570_Remote
 
         private void PhonesKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void PhonesKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void PhonesKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps != 0) { _state.PhonesValue = ClampKnobValue(_state.PhonesValue + steps); UpdateGainMeters(); UpdatePhonesMicKnobsVisual(); SyncPhonesMonitorGain(); } }
+        private void PhonesKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.Phones, sender, e);
 
         private void MicGainKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void MicGainKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void MicGainKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps != 0) { _state.MicGainValue = ClampKnobValue(_state.MicGainValue + steps); UpdateGainMeters(); UpdatePhonesMicKnobsVisual(); SyncMicWindowsEndpointVolume(); } }
+        private void MicGainKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.Mic, sender, e);
 
         private void AfRfOuterKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void AfRfOuterKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void AfRfOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.RfValue = ClampKnobValue(_state.RfValue + steps); _afRfOuterAngle = KnobAngleFromValue(_state.RfValue); rtAfRfOuter.Angle = _afRfOuterAngle; }
+        private void AfRfOuterKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.Rf, sender, e);
 
         private void AfRfInnerKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void AfRfInnerKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void AfRfInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.AfValue = ClampKnobValue(_state.AfValue + steps); _afRfInnerAngle = KnobAngleFromValue(_state.AfValue); rtAfRfInner.Angle = _afRfInnerAngle; }
+        private void AfRfInnerKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.Af, sender, e);
 
         private void IfSqlOuterKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void IfSqlOuterKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void IfSqlOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.IfShiftValue = ClampKnobValue(_state.IfShiftValue + steps); _ifSqlOuterAngle = KnobAngleFromValue(_state.IfShiftValue); rtIfSqlOuter.Angle = _ifSqlOuterAngle; }
+        private void IfSqlOuterKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.IfShift, sender, e);
 
         private void IfSqlInnerKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void IfSqlInnerKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void IfSqlInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.SqlValue = ClampKnobValue(_state.SqlValue + steps); _ifSqlInnerAngle = KnobAngleFromValue(_state.SqlValue); rtIfSqlInner.Angle = _ifSqlInnerAngle; }
+        private void IfSqlInnerKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.Sql, sender, e);
 
         private void DspSlopeOuterKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void DspSlopeOuterKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void DspSlopeOuterKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.DspHighValue = ClampKnobValue(_state.DspHighValue + steps); _dspSlopeOuterAngle = KnobAngleFromValue(_state.DspHighValue); rtDspSlopeOuter.Angle = _dspSlopeOuterAngle; }
+        private void DspSlopeOuterKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.DspHigh, sender, e);
 
         private void DspSlopeInnerKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void DspSlopeInnerKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
-        private void DspSlopeInnerKnob_MouseMove(object sender, MouseEventArgs e) { if (!_isDraggingKnob || sender is not UIElement el || e.LeftButton != MouseButtonState.Pressed) return; int steps = ComputeDragSteps(e, el); if (steps == 0) return; _state.DspLowValue = ClampKnobValue(_state.DspLowValue + steps); _dspSlopeInnerAngle = KnobAngleFromValue(_state.DspLowValue); rtDspSlopeInner.Angle = _dspSlopeInnerAngle; }
+        private void DspSlopeInnerKnob_MouseMove(object sender, MouseEventArgs e) => DragPot(Pot.DspLow, sender, e);
 
         private void RitXitKnob_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => BeginKnobDrag(e, (UIElement)sender);
         private void RitXitKnob_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndKnobDrag(e, (UIElement)sender);
@@ -2246,8 +2377,8 @@ namespace TS570_Remote
             if (steps == 0) return;
 
             _core.AdjustRitOffset(steps);
-            _ritXitAngle = NormalizeAngle(_ritXitAngle + AngleFromSteps(steps));
-            rtRitXit.Angle = _ritXitAngle;
+            _ritXitAngle += AngleFromSteps(steps);
+            knobRitXit.TurnTo(_ritXitAngle);
 
             if (_state.RitOn)
             {
@@ -2264,8 +2395,8 @@ namespace TS570_Remote
             int steps = ComputeDragSteps(e, el);
             if (steps == 0) return;
 
-            _multiChAngle = NormalizeAngle(_multiChAngle + AngleFromSteps(steps));
-            rtMultiCh.Angle = _multiChAngle;
+            _multiChAngle += AngleFromSteps(steps);
+            knobMultiCh.TurnTo(_multiChAngle);
 
             if (_isFilterAdjustMode)
             {

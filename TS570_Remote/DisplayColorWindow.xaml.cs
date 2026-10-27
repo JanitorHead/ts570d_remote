@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using TS570_Remote.Controls;
 
 namespace TS570_Remote;
 
@@ -18,6 +19,7 @@ public partial class DisplayColorWindow : Window
     public DisplayColorWindow(Color initialColor)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         SetFromColor(initialColor);
     }
 

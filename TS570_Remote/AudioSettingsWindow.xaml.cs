@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using TS570_Remote.Controls;
 
 namespace TS570_Remote;
 
@@ -10,6 +11,7 @@ public partial class AudioSettingsWindow : Window
     public AudioSettingsWindow(AppSettings settings)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         _settings = settings;
         LoadDevices();
 

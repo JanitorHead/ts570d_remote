@@ -13,9 +13,9 @@ Kenwood TS-570D remote control software for Windows using WPF and OmniRig CAT.
 
 **IF YOU KNOW C#, WPF, AND XAML: IT WOULD BE GREAT IF YOU COULD HELP OUT — OR FORK THIS AND RUN WITH IT YOURSELF.** The goal is not to leave this as eye candy: this tool should be **actually useful** and **usable for real** in the shack.
 
-**Work in progress — honest expectations:** this repo is still **unfinished**, but it has moved forward significantly: CAT sync, meter handling, startup bootstrap, TX power editing flow, and display color customization are now in place. It is still not production-grade software.
+**Work in progress — honest expectations:** this repo is still **unfinished**, but it has moved forward significantly: CAT sync, meter handling, startup bootstrap, TX power editing flow, display color customization and a front panel redrawn to the real rig's proportions are now in place. It is still not production-grade software.
 
-**Where things stand:** the UI already “lands”, but from here on it needs **hands-on work** in the code. **XAML** is where AI assistance falls short (fine layouts, styles, alignment, keeping the front panel maintainable), so it helps to know the stack — or at least have patience for manual polish.
+**Where things stand:** the front panel now follows the TS-570D closely; from here on the work is mostly **hands-on code**: CAT coverage and checking every control against the physical radio. Knowing **C#/WPF/XAML** helps a lot to keep the panel maintainable while that happens.
 
 **CAT / OmniRig:** many key functions are now wired and usable, but CAT coverage is still incomplete and some paths still need verification against the physical TS-570D front panel behavior.
 
@@ -30,6 +30,8 @@ If this sounds like your thing: open an issue, send a PR, or fork and go.
 A Windows desktop remote-control style UI for the **Kenwood TS-570D** HF transceiver, built with **WPF** and **OmniRig** for CAT. Treat it as a toy, not a guaranteed rig-control solution.
 
 ![Remote UI mimicking the TS-570D front panel](docs/screenshot.png)
+
+*Captured without a radio attached, so the status line reports a CAT/OmniRig error.*
 
 ### Inspiration
 
@@ -89,15 +91,18 @@ Default build output is under `TS570_Remote/bin/<Configuration>/net10.0-windows/
 - [x] **TX power editor mode (`PWR`)** with 5 W step control and bounds normalization.
 - [x] **Meter activity pipeline** (RX S-meter and TX PWR/SWR/COMP/ALC read paths, with visual bars and legends).
 - [x] **ACC2 monitor audio path** (input/output device selection + monitor toggle).
-- [x] **MIC knob driving Windows TX playback endpoint volume** (separate from monitor level).
+- [x] **MIC level driving Windows TX playback endpoint volume** (separate from monitor level).
 - [x] **Display color tool** (combined picker + hue + RGB + HEX + presets + persistent save).
 - [x] **Theme-aware LCD badges/text** reacting to active display color.
+- [x] **Faithful TS-570D faceplate**: matte charcoal panel with key shapes, legends, type sizes and positions measured on a front view of the rig (stadium side keys, grey dial keys with white legends, mode keys in their curved channel, slanted DOWN/UP pair, QUICK MEMO, SCAN rail, large tuning dial with finger dimple, knobs with the rig's nine-flute skirts, concentric AF/RF, IF SHIFT/SQL and DSP SLOPE knobs, 0–10 pot scales over ±150°, RIT arrows and LOW CUT / HIGH CUT legends set on their arcs). PHONES and MIC are level knobs (monitor volume and mic input) in place of the rig's jacks.
+- [x] **Animated front panel**: vector-drawn knobs (eased turns, hover glow, power-on sweep, floating value readout while adjusting), springy keys with amber lit state, red ON AIR lamp, and a status line that flashes on every change.
+- [x] **Dark themed menus and dialogs** (dark title bar on Windows 10/11, restyled audio routing and display color windows).
 
 ### Partially working / needs validation
 
 - [~] **Meter calibration** is improved but still needs rig-by-rig validation for exact correspondence.
 - [~] **Some CAT commands** are wired but not fully tested in all operating scenarios and modes.
-- [~] **Visual parity with the physical front panel** is close, but still not exact in all details.
+- [~] **Visual parity with the physical front panel**: layout, legends and knobs follow the rig, with deliberate differences (PHONES/MIC are level knobs, the LCD is the app's own rendering).
 
 ### Not implemented or known limitations
 
@@ -124,7 +129,7 @@ This project is released under the [MIT License](LICENSE).
 
 To help Google index this project, a lightweight GitHub Pages SEO setup is included under `docs/`:
 
-- `docs/index.md`
+- `docs/index.html` / `docs/index.md`
 - `docs/robots.txt`
 - `docs/sitemap.xml`
 

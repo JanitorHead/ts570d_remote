@@ -1,0 +1,313 @@
+<!--
+    Front-panel parts: key caps (dark and light plastic), lamps/LEDs, legends and meter brushes.
+    Keys animate on hover, press in with a springy release and glow amber while their
+    function is engaged (fx:PanelFx.IsLit).
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:fx="clr-namespace:TS570_Remote.Controls">
+
+    <!-- ══ Key materials ═════════════════════════════════════════════════════ -->
+    <LinearGradientBrush x:Key="KeyFaceDark" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF50515A" Offset="0"/>
+        <GradientStop Color="#FF3A3B43" Offset="0.45"/>
+        <GradientStop Color="#FF2A2B31" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="KeyEdgeDark" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF71727C" Offset="0"/>
+        <GradientStop Color="#FF2C2D33" Offset="0.5"/>
+        <GradientStop Color="#FF141518" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="KeyFaceLight" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFAEB1B9" Offset="0"/>
+        <GradientStop Color="#FF92959D" Offset="0.5"/>
+        <GradientStop Color="#FF7A7D85" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="KeyEdgeLight" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFD6D9E0" Offset="0"/>
+        <GradientStop Color="#FF83868F" Offset="0.5"/>
+        <GradientStop Color="#FF43464E" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- Recess cut into the faceplate around each key (lit lower lip = sunken). -->
+    <LinearGradientBrush x:Key="KeyWell" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FF060608" Offset="0"/>
+        <GradientStop Color="#FF17181C" Offset="0.6"/>
+        <GradientStop Color="#FF3D3E46" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="KeySheen" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#2CFFFFFF" Offset="0"/>
+        <GradientStop Color="#08FFFFFF" Offset="0.45"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.5"/>
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="KeyLitFill" RadiusX="0.6" RadiusY="0.7">
+        <GradientStop Color="#55FF9200" Offset="0"/>
+        <GradientStop Color="#18FF9200" Offset="0.7"/>
+        <GradientStop Color="#00FF9200" Offset="1"/>
+    </RadialGradientBrush>
+
+    <!-- ══ Key template ══════════════════════════════════════════════════════ -->
+    <ControlTemplate x:Key="PanelKeyTemplate" TargetType="Button">
+        <Grid x:Name="root">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualStateGroup.Transitions>
+                        <VisualTransition GeneratedDuration="0:0:0.14"/>
+                        <VisualTransition To="Pressed" GeneratedDuration="0:0:0.045"/>
+                        <VisualTransition From="Pressed" GeneratedDuration="0:0:0.32">
+                            <VisualTransition.GeneratedEasingFunction>
+                                <BackEase EasingMode="EaseOut" Amplitude="0.55"/>
+                            </VisualTransition.GeneratedEasingFunction>
+                        </VisualTransition>
+                    </VisualStateGroup.Transitions>
+                    <VisualState x:Name="Normal"/>
+                    <VisualState x:Name="MouseOver">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0"/>
+                            <DoubleAnimation Storyboard.TargetName="capShift" Storyboard.TargetProperty="Y" To="-0.4" Duration="0"/>
+                        </Storyboard>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="press" Storyboard.TargetProperty="Opacity" To="1" Duration="0"/>
+                            <DoubleAnimation Storyboard.TargetName="capScale" Storyboard.TargetProperty="ScaleX" To="0.93" Duration="0"/>
+                            <DoubleAnimation Storyboard.TargetName="capScale" Storyboard.TargetProperty="ScaleY" To="0.93" Duration="0"/>
+                            <DoubleAnimation Storyboard.TargetName="capShift" Storyboard.TargetProperty="Y" To="1.1" Duration="0"/>
+                            <DoubleAnimation Storyboard.TargetName="shadow" Storyboard.TargetProperty="Opacity" To="0.15" Duration="0"/>
+                        </Storyboard>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0"/>
+                        </Storyboard>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <!-- Amber halo when lit (collapsed otherwise, so the blur costs nothing). -->
+            <Border x:Name="halo" Margin="-2.5" Visibility="Collapsed" Opacity="0"
+                    CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"
+                    BorderThickness="1.6" BorderBrush="#FFFFA020">
+                <Border.Effect>
+                    <DropShadowEffect Color="#FFFF9200" BlurRadius="9" ShadowDepth="0" Opacity="1"/>
+                </Border.Effect>
+            </Border>
+            <Border x:Name="well" Margin="-1.5"
+                    CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"
+                    Background="{StaticResource KeyWell}"/>
+            <Border x:Name="shadow" Margin="0.5,1.6,0.5,-1.2" Background="#B0000000"
+                    CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"/>
+
+            <Grid x:Name="cap" RenderTransformOrigin="0.5,0.5">
+                <Grid.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="capScale"/>
+                        <TranslateTransform x:Name="capShift"/>
+                    </TransformGroup>
+                </Grid.RenderTransform>
+                <Border CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"
+                        Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"/>
+                <Border Margin="1" Background="{StaticResource KeySheen}"
+                        CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"/>
+                <Border x:Name="litFill" Margin="1" Opacity="0" Background="{StaticResource KeyLitFill}"
+                        CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"/>
+                <Border x:Name="hover" Margin="1" Opacity="0" Background="#14FFFFFF"
+                        CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"/>
+                <Border x:Name="press" Margin="1" Opacity="0" Background="#4D000000"
+                        CornerRadius="{Binding (fx:PanelFx.CornerRadius), RelativeSource={RelativeSource TemplatedParent}}"/>
+                <ContentPresenter x:Name="content" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="fx:PanelFx.IsLit" Value="True">
+                <Setter TargetName="content" Property="TextElement.Foreground"
+                        Value="{Binding (fx:PanelFx.LitForeground), RelativeSource={RelativeSource TemplatedParent}}"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="halo" Storyboard.TargetProperty="Visibility">
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+                            </ObjectAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="halo" Storyboard.TargetProperty="Opacity">
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.09" Value="1"/>
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.30" Value="0.72"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimation Storyboard.TargetName="litFill" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="halo" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.28"/>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="halo" Storyboard.TargetProperty="Visibility">
+                                <DiscreteObjectKeyFrame KeyTime="0:0:0.28" Value="{x:Static Visibility.Collapsed}"/>
+                            </ObjectAnimationUsingKeyFrames>
+                            <DoubleAnimation Storyboard.TargetName="litFill" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.28"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- ══ Key styles ════════════════════════════════════════════════════════ -->
+    <Style x:Key="MetalBtn" TargetType="Button">
+        <Setter Property="Foreground" Value="#FFDCDDE3"/>
+        <Setter Property="Background" Value="{StaticResource KeyFaceDark}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource KeyEdgeDark}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource PanelFont}"/>
+        <Setter Property="FontSize" Value="8.5"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Padding" Value="4,1"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="False"/>
+        <Setter Property="fx:PanelFx.CornerRadius" Value="4"/>
+        <Setter Property="Template" Value="{StaticResource PanelKeyTemplate}"/>
+    </Style>
+
+    <Style x:Key="PillBtn" TargetType="Button" BasedOn="{StaticResource MetalBtn}">
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="MinWidth" Value="48"/>
+        <Setter Property="fx:PanelFx.CornerRadius" Value="10"/>
+    </Style>
+
+    <!-- Flat stadium keys of the left column (ATT, PRE-AMP, VOX…), 40 x 14 on the rig; legends printed above. -->
+    <Style x:Key="SideKeyBtn" TargetType="Button" BasedOn="{StaticResource MetalBtn}">
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="15"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="fx:PanelFx.CornerRadius" Value="7"/>
+    </Style>
+
+    <!-- Stadium keys with the legend on the key (N.R., B.C., CW TUNE, FILTER), 54 x 20 on the rig. -->
+    <Style x:Key="LegendKeyBtn" TargetType="Button" BasedOn="{StaticResource MetalBtn}">
+        <Setter Property="Width" Value="54"/>
+        <Setter Property="Height" Value="19"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="FontSize" Value="10.3"/>
+        <Setter Property="Foreground" Value="#FFF4F5F7"/>
+        <Setter Property="fx:PanelFx.CornerRadius" Value="10"/>
+    </Style>
+
+    <Style x:Key="RoundVfoBtn" TargetType="Button" BasedOn="{StaticResource MetalBtn}">
+        <Setter Property="Width" Value="46"/>
+        <Setter Property="Height" Value="46"/>
+        <Setter Property="FontSize" Value="9"/>
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="fx:PanelFx.CornerRadius" Value="999"/>
+    </Style>
+    <Style x:Key="RoundMiniBtn" TargetType="Button" BasedOn="{StaticResource MetalBtn}">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="FontSize" Value="8"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="fx:PanelFx.CornerRadius" Value="999"/>
+    </Style>
+
+    <!-- Grey plastic keys around the tuning dial: white legends, as on the rig. -->
+    <Style x:Key="LightRoundVfoBtn" TargetType="Button" BasedOn="{StaticResource RoundVfoBtn}">
+        <Setter Property="Foreground" Value="#FFF9FAFC"/>
+        <Setter Property="Background" Value="{StaticResource KeyFaceLight}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource KeyEdgeLight}"/>
+        <Setter Property="fx:PanelFx.LitForeground" Value="#FFFFD27A"/>
+    </Style>
+    <Style x:Key="LightRoundMiniBtn" TargetType="Button" BasedOn="{StaticResource RoundMiniBtn}">
+        <Setter Property="Foreground" Value="#FFF9FAFC"/>
+        <Setter Property="Background" Value="{StaticResource KeyFaceLight}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource KeyEdgeLight}"/>
+        <Setter Property="fx:PanelFx.LitForeground" Value="#FFFFD27A"/>
+    </Style>
+
+    <!-- ══ Legends ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="PanelLabel" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource PanelFont}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="10.6"/>
+        <Setter Property="Foreground" Value="#FFF0F1F4"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+    <Style x:Key="PanelLabelDim" TargetType="TextBlock" BasedOn="{StaticResource PanelLabel}">
+        <Setter Property="Foreground" Value="#FF8E909A"/>
+    </Style>
+    <!-- Orange print of the TX parameter keys (MIC / PWR / KEY / DELAY) and FILTER. -->
+    <Style x:Key="PanelLabelAmber" TargetType="TextBlock" BasedOn="{StaticResource PanelLabel}">
+        <Setter Property="Foreground" Value="#FFFF8C3A"/>
+    </Style>
+
+    <!-- ══ LEDs (status bar) ═════════════════════════════════════════════════ -->
+    <Style x:Key="LedGreen" TargetType="Ellipse">
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Height" Value="8"/>
+        <Setter Property="Stroke" Value="#FF0A2A0A"/>
+        <Setter Property="StrokeThickness" Value="0.8"/>
+        <Setter Property="Fill">
+            <Setter.Value>
+                <RadialGradientBrush GradientOrigin="0.35,0.3" Center="0.4,0.35" RadiusX="0.65" RadiusY="0.65">
+                    <GradientStop Color="#FFE6FFE6" Offset="0"/>
+                    <GradientStop Color="#FF4CE65A" Offset="0.35"/>
+                    <GradientStop Color="#FF0F8A22" Offset="1"/>
+                </RadialGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#FF3CFF5A" BlurRadius="8" ShadowDepth="0" Opacity="0.85"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0.6" Duration="0:0:1.6">
+                            <DoubleAnimation.EasingFunction>
+                                <SineEase EasingMode="EaseInOut"/>
+                            </DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+    <Style x:Key="LedAmber" TargetType="Ellipse">
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Height" Value="8"/>
+        <Setter Property="Stroke" Value="#FF3A2400"/>
+        <Setter Property="StrokeThickness" Value="0.8"/>
+        <Setter Property="Fill">
+            <Setter.Value>
+                <RadialGradientBrush GradientOrigin="0.35,0.3" Center="0.4,0.35" RadiusX="0.65" RadiusY="0.65">
+                    <GradientStop Color="#FFFFF2CC" Offset="0"/>
+                    <GradientStop Color="#FFFFB020" Offset="0.35"/>
+                    <GradientStop Color="#FFB86A00" Offset="1"/>
+                </RadialGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#FFFFA000" BlurRadius="8" ShadowDepth="0" Opacity="0.85"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard RepeatBehavior="Forever" Timeline.DesiredFrameRate="20">
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1"/>
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.7" Value="1"/>
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="0.25"/>
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.4" Value="0.25"/>
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.6" Value="1"/>
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Recessed channel moulded into the faceplate around grouped keys (mode keys, DOWN/UP, SCAN row…). -->
+    <SolidColorBrush x:Key="RecessBrush" Color="#4C000000"/>
+    <SolidColorBrush x:Key="RecessLipBrush" Color="#1CFFFFFF"/>
+</ResourceDictionary>

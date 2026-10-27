@@ -8,6 +8,8 @@ description: TS-570D remote-control style desktop app for Kenwood TS-570D using 
 
 `ts570d_remote` is a Windows desktop app that provides a remote-control style UI for the **Kenwood TS-570D** transceiver.
 
+![The app mirroring the Kenwood TS-570D front panel](screenshot.png)
+
 ## What this project is
 
 - Kenwood **TS-570D control software** concept

@@ -2,68 +2,93 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Audio — ACC2 / USB"
-        Height="520" Width="540"
-        MinHeight="460" MinWidth="480"
+        Height="590" Width="560"
+        MinHeight="540" MinWidth="500"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterOwner"
-        Background="#FF16161C">
-    <Grid Margin="18">
+        Style="{StaticResource DialogWindow}">
+
+    <Window.Resources>
+        <!-- Small colour-coded route tag (RX / MON / TX). -->
+        <Style x:Key="RouteTag" TargetType="Border">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="0,3"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,1,14,0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style x:Key="RouteTagText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource PanelFont}"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Style="{StaticResource DialogRoot}" Margin="22,18,22,18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0"
-                   Text="As in WSJT-X: Input = radio to PC; Output (monitor) = where you listen on the PC; Output (TX / MIC) = USB playback toward the radio for transmit."
-                   Foreground="#FFFFB040" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap"
-                   Margin="0,0,0,12"/>
 
-        <TextBlock Grid.Row="1" Text="Input — capture (recording)"
-                   Foreground="#FFE0E0E8" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
-        <TextBlock Grid.Row="2"
-                   Text="USB / line from ACC2 (RX audio into Windows)."
-                   Foreground="#FF8A8A96" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,8"/>
-        <ComboBox x:Name="cmbCapture"
-                  Grid.Row="3"
-                  FontFamily="Consolas" FontSize="10"
-                  Margin="0,0,0,14"
-                  DisplayMemberPath="FriendlyName"/>
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="AUDIO ROUTING" Style="{StaticResource DialogEyebrow}"/>
+            <TextBlock Text="ACC2 / USB sound card" Style="{StaticResource DialogTitle}" Margin="0,4,0,0"/>
+        </StackPanel>
 
-        <TextBlock Grid.Row="4" Text="Output — monitor playback (PHONES knob)"
-                   Foreground="#FFE0E0E8" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
-        <TextBlock Grid.Row="5"
-                   Text="Speakers or headphones for ACC2 monitoring (software gain on this path only)."
-                   Foreground="#FF8A8A96" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,8"/>
-        <ComboBox x:Name="cmbPlayback"
-                  Grid.Row="6"
-                  VerticalAlignment="Top"
-                  FontFamily="Consolas" FontSize="10"
-                  Margin="0,0,0,14"
-                  DisplayMemberPath="FriendlyName"/>
+        <Border Grid.Row="1" Margin="0,14,0,14" CornerRadius="7" Padding="12,9"
+                Background="#14FF9200" BorderBrush="#40FF9200" BorderThickness="1">
+            <TextBlock Style="{StaticResource DialogHint}" Foreground="#FFE8C590"
+                       Text="As in WSJT-X: Input = radio to PC; Output (monitor) = where you listen on the PC; Output (TX / MIC) = USB playback toward the radio for transmit."/>
+        </Border>
 
-        <TextBlock Grid.Row="7" Text="Output — transmit path (MIC knob → Windows volume)"
-                   Foreground="#FFE0E0E8" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
-        <TextBlock Grid.Row="8"
-                   Text="The WSJT-X-style Speakers (USB…) endpoint: master level toward the radio, without lowering capture input or monitor level."
-                   Foreground="#FF8A8A96" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,8"/>
-        <ComboBox x:Name="cmbTxPlayback"
-                  Grid.Row="9"
-                  VerticalAlignment="Top"
-                  FontFamily="Consolas" FontSize="10"
-                  DisplayMemberPath="FriendlyName"/>
+        <StackPanel Grid.Row="2">
+            <Border Style="{StaticResource DialogCard}" Margin="0,0,0,10">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Style="{StaticResource RouteTag}" Background="#1A46C2A0" BorderBrush="#6646C2A0">
+                        <TextBlock Text="RX" Style="{StaticResource RouteTagText}" Foreground="#FF5FD9B5"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="Input — capture (recording)" Style="{StaticResource DialogHeading}"/>
+                        <TextBlock Text="USB / line from ACC2 (RX audio into Windows)." Style="{StaticResource DialogHint}" Margin="0,3,0,9"/>
+                        <ComboBox x:Name="cmbCapture" DisplayMemberPath="FriendlyName"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
 
-        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="OK" Width="90" Height="26" Margin="0,0,8,0" IsDefault="True" Click="BtnOk_Click"/>
-            <Button Content="Cancel" Width="90" Height="26" IsCancel="True" Click="BtnCancel_Click"/>
+            <Border Style="{StaticResource DialogCard}" Margin="0,0,0,10">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Style="{StaticResource RouteTag}" Background="#1A6EA8FF" BorderBrush="#666EA8FF">
+                        <TextBlock Text="MON" Style="{StaticResource RouteTagText}" Foreground="#FF8DBBFF"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="Output — monitor playback (PHONES level)" Style="{StaticResource DialogHeading}"/>
+                        <TextBlock Text="Speakers or headphones for ACC2 monitoring (software gain on this path only)." Style="{StaticResource DialogHint}" Margin="0,3,0,9"/>
+                        <ComboBox x:Name="cmbPlayback" DisplayMemberPath="FriendlyName"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource DialogCard}">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Style="{StaticResource RouteTag}" Background="#1AFF5A5A" BorderBrush="#66FF5A5A">
+                        <TextBlock Text="TX" Style="{StaticResource RouteTagText}" Foreground="#FFFF7A7A"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="Output — transmit path (MIC level → Windows volume)" Style="{StaticResource DialogHeading}"/>
+                        <TextBlock Text="The WSJT-X-style Speakers (USB…) endpoint: master level toward the radio, without lowering capture input or monitor level."
+                                   Style="{StaticResource DialogHint}" Margin="0,3,0,9"/>
+                        <ComboBox x:Name="cmbTxPlayback" DisplayMemberPath="FriendlyName"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" MinWidth="92" Margin="0,0,10,0" IsCancel="True" Click="BtnCancel_Click"/>
+            <Button Content="OK" MinWidth="92" IsDefault="True" Click="BtnOk_Click"/>
         </StackPanel>
     </Grid>
 </Window>
