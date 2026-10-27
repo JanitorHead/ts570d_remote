@@ -2,8 +2,8 @@
 
 Kenwood TS-570D remote control software for Windows using WPF and OmniRig CAT.
 
-**Latest release:** `v0.3.0` (Git tag/release).  
-**Project file version:** `0.2.0` in `TS570_Remote.csproj` (not yet bumped to match the release tag).
+**Latest release:** `v0.4.0` (Git tag/release), Windows x64 build attached to the release.  
+**Project file version:** `0.4.0` in `TS570_Remote.csproj`.
 
 **Disclaimer:** This repository is **vibe coded** (AI-assisted, exploratory hacking) and is **only an experiment**. It is not production software, not audited for safety or correctness, and not a substitute for the manufacturer’s tools or documentation.
 
